@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "region": {"id": "us-ca-bay-area", "name": "Bay Area", "countrySubdivision": "California"},
+  "asOf": "2026-09-20",
+  "method": {
+    "summary": "Expected seasonality is the initial prior. Observed Flora sightings can later adjust status, confidence, and rank.",
+    "signals": ["expected_season", "observed_sightings", "community_interest"]
+  },
+  "produce": [
+    {"id":"grape","name":"California grapes","varietyFocus":"Concord","status":"peak","expected":{"startMonth":6,"endMonth":12,"origin":"California","confidence":0.82},"observed":{"sightingCount":6,"lastSeen":"2026-09-19","confidence":0.18},"rank":1},
+    {"id":"tomato","name":"Heirloom tomatoes","status":"peak","expected":{"startMonth":6,"endMonth":10,"origin":"California","confidence":0.85},"observed":{"sightingCount":0,"lastSeen":null,"confidence":0},"rank":2},
+    {"id":"apple","name":"New crop apples","status":"starting","expected":{"startMonth":8,"endMonth":11,"origin":"California","confidence":0.8},"observed":{"sightingCount":0,"lastSeen":null,"confidence":0},"rank":3},
+    {"id":"fig","name":"Black Mission figs","status":"ending","expected":{"startMonth":5,"endMonth":9,"origin":"California","confidence":0.78},"observed":{"sightingCount":0,"lastSeen":null,"confidence":0},"rank":4},
+    {"id":"pomegranate","name":"Pomegranates","status":"starting","expected":{"startMonth":9,"endMonth":1,"origin":"California","confidence":0.82},"observed":{"sightingCount":0,"lastSeen":null,"confidence":0},"rank":5},
+    {"id":"pear","name":"California pears","status":"peak","expected":{"startMonth":7,"endMonth":12,"origin":"California","confidence":0.82},"observed":{"sightingCount":0,"lastSeen":null,"confidence":0},"rank":6},
+    {"id":"winter-squash","name":"Winter squash","status":"starting","expected":{"startMonth":9,"endMonth":2,"origin":"California","confidence":0.8},"observed":{"sightingCount":0,"lastSeen":null,"confidence":0},"rank":7},
+    {"id":"peach","name":"Late peaches","status":"ending","expected":{"startMonth":5,"endMonth":9,"origin":"California","confidence":0.86},"observed":{"sightingCount":0,"lastSeen":null,"confidence":0},"rank":8},
+    {"id":"jujube","name":"Jujubes","status":"peak","expected":{"startMonth":9,"endMonth":10,"origin":"California","confidence":0.72},"observed":{"sightingCount":0,"lastSeen":null,"confidence":0},"rank":9},
+    {"id":"eggplant","name":"Eggplant","status":"ending","expected":{"startMonth":6,"endMonth":10,"origin":"California","confidence":0.76},"observed":{"sightingCount":0,"lastSeen":null,"confidence":0},"rank":10}
+  ]
+}
