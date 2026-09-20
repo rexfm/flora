@@ -21,3 +21,5 @@ Market flyer evidence lives in `data/market-observations.json`. Each retailer re
 - `index.html` is a short, visual seasonal catalog.
 - `produce/` holds static-first produce guides organized around Find, Eat and Grow. Black Mission figs is the first complete guide.
 - `markets.html` holds the longer, source-labeled weekly market watch so the homepage stays focused.
+
+The Spot flow supports the iPhone camera and photo library. Sightings and photo blobs are stored locally in IndexedDB; no photo is uploaded or synced by this static prototype.

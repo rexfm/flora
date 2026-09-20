@@ -53,7 +53,27 @@
     <a href="produce/black-mission-figs.html#grow"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 21h-2v-8.1C6.3 12.4 4 10 4 6V4h2c3.2 0 5.3 1.4 6.4 3.7C13.7 5.4 16 4 20 4v2c0 4.6-2.9 7-8 7v8Z"/></svg><span>Grow</span></a>
   </nav>
 
-  <dialog class="spot-dialog" data-spot-dialog aria-labelledby="spot-title"><form method="dialog" class="dialog-card"><button class="dialog-close" value="cancel" aria-label="Close">×</button><p class="kicker">Add to the living season</p><h2 id="spot-title">What did you spot?</h2><p>A food, a place, a price and a moment in time.</p><label>Food or variety<input name="food" autocomplete="off" placeholder="e.g. Black Mission fig"></label><div class="form-row"><label>Place<input name="place" autocomplete="organization" placeholder="Market or farm"></label><label>Price <span>(optional)</span><input name="price" inputmode="decimal" placeholder="$4 / lb"></label></div><button class="solid-button" value="submit" data-save-sighting>Save sighting</button><p class="form-note" role="status" data-form-status></p></form></dialog>
+  <dialog class="spot-dialog" data-spot-dialog aria-labelledby="spot-title">
+    <form method="dialog" class="dialog-card">
+      <button class="dialog-close" value="cancel" aria-label="Close">×</button>
+      <p class="kicker">Add to the living season</p>
+      <h2 id="spot-title">What did you spot?</h2>
+      <p>A food, a place, a price and a photo from right now.</p>
+      <label>Food or variety<input name="food" autocomplete="off" placeholder="e.g. Black Mission fig"></label>
+      <div class="form-row"><label>Place<input name="place" autocomplete="organization" placeholder="Market or farm"></label><label>Price <span>(optional)</span><input name="price" inputmode="decimal" placeholder="$4 / lb"></label></div>
+      <fieldset class="photo-fieldset">
+        <legend>Photo evidence <span>(optional)</span></legend>
+        <div class="photo-actions" data-photo-actions>
+          <label class="photo-action camera-action"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M9 4 7.5 6H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-3.5L15 4H9Zm3 13a4 4 0 1 1 0-8 4 4 0 0 1 0 8Z"/></svg><span>Take photo</span><input type="file" accept="image/*" capture="environment" data-photo-camera></label>
+          <label class="photo-action"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Zm1 13h14l-4.5-6-3.5 4.5-2.5-3L5 17Zm2-7a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/></svg><span>Photo library</span><input type="file" accept="image/*" data-photo-library></label>
+        </div>
+        <figure class="photo-preview" data-photo-preview hidden><img alt="Selected sighting preview" data-photo-preview-image><figcaption><span data-photo-name></span><button type="button" data-remove-photo>Remove</button></figcaption></figure>
+        <p class="photo-note">Your photo stays on this device until Flora sync is available.</p>
+      </fieldset>
+      <button class="solid-button" value="submit" data-save-sighting>Save on this device</button>
+      <p class="form-note" role="status" aria-live="polite" data-form-status></p>
+    </form>
+  </dialog>
   <dialog class="location-dialog" data-location-dialog aria-labelledby="location-title"><form method="dialog" class="dialog-card compact"><button class="dialog-close" value="cancel" aria-label="Close">×</button><p class="kicker">Your seasonal region</p><h2 id="location-title">Bay Area, California</h2><p>The calendar is tuned for Northern California.</p><button class="solid-button" value="close">Sounds good</button></form></dialog>
   <dialog class="produce-dialog" data-produce-dialog aria-labelledby="produce-dialog-title"><form method="dialog" class="dialog-card compact"><button class="dialog-close" value="cancel" aria-label="Close">×</button><p class="kicker">September field note</p><h2 id="produce-dialog-title" data-produce-dialog-title>In season</h2><p data-produce-dialog-copy></p><button class="solid-button" value="close">Keep browsing</button></form></dialog>
   <script src="scripts/app.js" defer></script>

@@ -1,4 +1,37 @@
 (() => {
+  const SIGHTINGS_DB = 'flora-local';
+  const SIGHTINGS_STORE = 'sightings';
+
+  function openSightingsDatabase() {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open(SIGHTINGS_DB, 1);
+      request.onupgradeneeded = () => {
+        const database = request.result;
+        if (!database.objectStoreNames.contains(SIGHTINGS_STORE)) {
+          database.createObjectStore(SIGHTINGS_STORE, { keyPath: 'id' });
+        }
+      };
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async function storeSighting(sighting) {
+    const database = await openSightingsDatabase();
+    return new Promise((resolve, reject) => {
+      const transaction = database.transaction(SIGHTINGS_STORE, 'readwrite');
+      transaction.objectStore(SIGHTINGS_STORE).put(sighting);
+      transaction.oncomplete = () => {
+        database.close();
+        resolve();
+      };
+      transaction.onerror = () => {
+        database.close();
+        reject(transaction.error);
+      };
+    });
+  }
+
   const cards = [...document.querySelectorAll('[data-status]')];
   const chips = [...document.querySelectorAll('[data-filter]')];
   const emptyState = document.querySelector('[data-empty-state]');
@@ -54,23 +87,84 @@
   const spotDialog = document.querySelector('[data-spot-dialog]');
   document.querySelectorAll('[data-spot-button]').forEach((button) => {
     button.addEventListener('click', () => {
+      if (!spotDialog) return;
       if (typeof spotDialog.showModal === 'function') spotDialog.showModal();
       else spotDialog.setAttribute('open', '');
     });
   });
 
+  let selectedPhoto = null;
+  let previewUrl = null;
+  const photoInputs = [...document.querySelectorAll('[data-photo-camera], [data-photo-library]')];
+  const photoPreview = document.querySelector('[data-photo-preview]');
+  const photoPreviewImage = document.querySelector('[data-photo-preview-image]');
+  const photoName = document.querySelector('[data-photo-name]');
+  const photoActions = document.querySelector('[data-photo-actions]');
+  const formStatus = document.querySelector('[data-form-status]');
+
+  function clearPhoto() {
+    selectedPhoto = null;
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    previewUrl = null;
+    photoInputs.forEach((input) => { input.value = ''; });
+    if (photoPreviewImage) photoPreviewImage.removeAttribute('src');
+    if (photoPreview) photoPreview.hidden = true;
+    if (photoActions) photoActions.hidden = false;
+  }
+
+  photoInputs.forEach((input) => {
+    input.addEventListener('change', () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      if (!file.type.startsWith('image/')) {
+        formStatus.textContent = 'Choose a photo or image file.';
+        input.value = '';
+        return;
+      }
+      selectedPhoto = file;
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+      previewUrl = URL.createObjectURL(file);
+      photoPreviewImage.src = previewUrl;
+      photoName.textContent = file.name || 'New photo';
+      photoPreview.hidden = false;
+      photoActions.hidden = true;
+      formStatus.textContent = 'Photo ready to save.';
+    });
+  });
+
+  document.querySelector('[data-remove-photo]')?.addEventListener('click', () => {
+    clearPhoto();
+    formStatus.textContent = 'Photo removed.';
+  });
+
   const saveButton = document.querySelector('[data-save-sighting]');
-  saveButton?.addEventListener('click', (event) => {
+  saveButton?.addEventListener('click', async (event) => {
+    event.preventDefault();
     const foodInput = spotDialog.querySelector('[name="food"]');
     const food = foodInput.value.trim();
     if (!food) {
-      event.preventDefault();
-      document.querySelector('[data-form-status]').textContent = 'Add a food or variety to save this sighting.';
+      formStatus.textContent = 'Add a food or variety to save this sighting.';
       foodInput.focus();
       return;
     }
-    event.preventDefault();
-    document.querySelector('[data-form-status]').textContent = `${food} is ready to become a Flora sighting. Data sync comes next.`;
+    const form = spotDialog.querySelector('form');
+    form.classList.add('is-saving');
+    formStatus.textContent = 'Saving on this device…';
+    try {
+      await storeSighting({
+        id: typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : `sighting-${Date.now()}`,
+        food,
+        place: form.elements.place.value.trim(),
+        price: form.elements.price.value.trim(),
+        observedAt: new Date().toISOString(),
+        photo: selectedPhoto
+      });
+      formStatus.textContent = `${food} saved on this device${selectedPhoto ? ' with its photo' : ''}.`;
+    } catch (error) {
+      formStatus.textContent = 'This sighting could not be saved. Your photo has not left this device.';
+    } finally {
+      form.classList.remove('is-saving');
+    }
   });
 
   const locationDialog = document.querySelector('[data-location-dialog]');
