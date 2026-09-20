@@ -4,287 +4,58 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#f4eddd">
-  <meta name="description" content="Flora is a seasonal field guide for finding, eating, and growing good food.">
-  <title>Flora — What's good right now</title>
+  <meta name="description" content="Flora is a visual field guide to what is good to eat right now.">
+  <title>Flora — Eat the season</title>
   <link rel="stylesheet" href="styles.css">
 </head>
-<body>
+<body class="catalog-page">
   <a class="skip-link" href="#seasonal">Skip to seasonal produce</a>
-
   <header class="site-header shell">
-    <a class="wordmark" href="#top" aria-label="Flora home">flora<span aria-hidden="true">✳</span></a>
-    <button class="location-button" type="button" data-location-button aria-haspopup="dialog">
-      <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 21s7-6.1 7-12A7 7 0 0 0 5 9c0 5.9 7 12 7 12Zm0-9.2A2.8 2.8 0 1 0 12 6a2.8 2.8 0 0 0 0 5.8Z"/></svg>
-      <span>Bay Area</span>
-      <span aria-hidden="true">⌄</span>
-    </button>
+    <a class="wordmark" href="index.html" aria-label="Flora home">flora<span aria-hidden="true">✳</span></a>
+    <button class="location-button" type="button" data-location-button aria-haspopup="dialog"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 21s7-6.1 7-12A7 7 0 0 0 5 9c0 5.9 7 12 7 12Zm0-9.2A2.8 2.8 0 1 0 12 6a2.8 2.8 0 0 0 0 5.8Z"/></svg><span>Bay Area</span><span aria-hidden="true">⌄</span></button>
   </header>
 
   <main id="top">
-    <section class="hero shell" aria-labelledby="page-title">
-      <p class="eyebrow"><time datetime="2026-09-20">September 20</time> · Bay Area</p>
-      <h1 id="page-title">What’s good<br><em>right now?</em></h1>
-      <p class="intro">A field guide to the food having its moment—what’s peaking, what just arrived, and what to eat before it’s gone.</p>
-      <div class="status-summary" aria-label="Season overview">
-        <a href="#seasonal" data-filter-link="peak"><strong>4</strong><span>Peak now</span></a>
-        <a href="#seasonal" data-filter-link="starting"><strong>3</strong><span>Starting</span></a>
-        <a href="#seasonal" data-filter-link="ending"><strong>3</strong><span>Ending soon</span></a>
-      </div>
-    </section>
+    <section class="catalog-hero shell" aria-labelledby="page-title"><p class="eyebrow"><time datetime="2026-09-20">September 20</time> · Bay Area</p><h1 id="page-title">Eat the<br><em>season.</em></h1><p>Pick something that looks good.</p></section>
 
-    <section class="seasonal-section" id="seasonal" aria-labelledby="seasonal-title">
-      <div class="section-heading shell">
-        <div>
-          <p class="kicker">The September basket</p>
-          <h2 id="seasonal-title">In season near you</h2>
-        </div>
-        <button class="text-button" type="button" data-show-all>See all <span aria-hidden="true">→</span></button>
-      </div>
-
+    <section class="seasonal-section catalog-season" id="seasonal" aria-labelledby="seasonal-title">
+      <div class="section-heading shell"><div><p class="kicker">Right now</p><h2 id="seasonal-title">September’s good stuff</h2></div></div>
       <div class="filter-bar shell" aria-label="Filter seasonal produce">
         <button class="filter-chip is-active" type="button" data-filter="all" aria-pressed="true">All</button>
         <button class="filter-chip" type="button" data-filter="peak" aria-pressed="false"><i class="dot peak"></i>Peak now</button>
         <button class="filter-chip" type="button" data-filter="starting" aria-pressed="false"><i class="dot starting"></i>Starting</button>
         <button class="filter-chip" type="button" data-filter="ending" aria-pressed="false"><i class="dot ending"></i>Ending soon</button>
       </div>
-
       <div class="produce-grid shell" data-produce-grid>
-        <article class="produce-card feature" data-status="peak">
-          <a href="#grapes-story" aria-label="Explore California grapes">
-            <div class="produce-image grape-bg"><img src="assets/grapes.svg" alt="A cluster of deep purple grapes with green leaves" width="720" height="540"></div>
-            <div class="card-copy"><span class="season-tag peak">Peak now</span><h3>California grapes</h3><p>Sweet, fragrant and everywhere. Look for Concords’ short, perfumed season.</p><span class="card-link">Explore grapes <span aria-hidden="true">↗</span></span></div>
-          </a>
-        </article>
-
-        <article class="produce-card" data-status="peak">
-          <a href="#season-note-title" data-produce-detail="Tomatoes are still abundant across the Bay Area. This baseline expects their local season to run into October; sightings will tell Flora when supply actually begins to taper." aria-label="Explore heirloom tomatoes">
-            <div class="produce-image tomato-bg"><img src="assets/tomatoes.svg" alt="Red and golden heirloom tomatoes" width="560" height="440"></div>
-            <div class="card-copy"><span class="season-tag peak">Peak now</span><h3>Heirloom tomatoes</h3><p>Last big, sun-warm weeks.</p><span class="season-window">June—October</span></div>
-          </a>
-        </article>
-
-        <article class="produce-card" data-status="starting">
-          <a href="#season-note-title" data-produce-detail="The first crisp apples of the new crop are arriving now. Flora will eventually distinguish varieties and orchards as sightings accumulate." aria-label="Explore new crop apples">
-            <div class="produce-image apple-bg"><img src="assets/apples.svg" alt="Red and green new crop apples" width="560" height="440"></div>
-            <div class="card-copy"><span class="season-tag starting">Starting</span><h3>New crop apples</h3><p>Crisp first picks are arriving.</p><span class="season-window">August—November</span></div>
-          </a>
-        </article>
-
-        <article class="produce-card" data-status="ending">
-          <a href="#season-note-title" data-produce-detail="Black Mission figs are delicate and late-season now. Look for soft fruit with a jammy center—and eat it quickly." aria-label="Explore black mission figs">
-            <div class="produce-image fig-bg"><img src="assets/figs.svg" alt="Whole and halved purple figs" width="560" height="440"></div>
-            <div class="card-copy"><span class="season-tag ending">Ending soon</span><h3>Black Mission figs</h3><p>Jammy, delicate, nearly gone.</p><span class="season-window">May—September</span></div>
-          </a>
-        </article>
-
-        <article class="produce-card" data-status="starting">
-          <a href="#season-note-title" data-produce-detail="Pomegranates are just beginning their long fall run. Early local sightings can help Flora learn when the season truly starts each year." aria-label="Explore pomegranates">
-            <div class="produce-image pomegranate-bg"><img src="assets/pomegranates.svg" alt="A red pomegranate showing jewel-like seeds" width="560" height="440"></div>
-            <div class="card-copy"><span class="season-tag starting">Starting</span><h3>Pomegranates</h3><p>The first ruby fruit of fall.</p><span class="season-window">September—January</span></div>
-          </a>
-        </article>
-
-        <article class="produce-card" data-status="peak">
-          <a href="#season-note-title" data-produce-detail="California pears are in their floral, honeyed prime. A little give at the neck is a better ripeness clue than softness everywhere." aria-label="Explore California pears">
-            <div class="produce-image pear-bg"><img src="assets/pears.svg" alt="Golden green California pears" width="560" height="440"></div>
-            <div class="card-copy"><span class="season-tag peak">Peak now</span><h3>California pears</h3><p>Floral, yielding and honeyed.</p><span class="season-window">July—December</span></div>
-          </a>
-        </article>
-
-        <article class="produce-card" data-status="starting">
-          <a href="#season-note-title" data-produce-detail="Winter squash is arriving as summer winds down. Its long storage life makes market sightings different from harvest sightings—exactly the distinction Flora can learn." aria-label="Explore winter squash">
-            <div class="produce-image squash-bg"><img src="assets/squash.svg" alt="Green, orange and cream winter squash" width="560" height="440"></div>
-            <div class="card-copy"><span class="season-tag starting">Starting</span><h3>Winter squash</h3><p>Sweet, sturdy and ready to roast.</p><span class="season-window">September—February</span></div>
-          </a>
-        </article>
-
-        <article class="produce-card" data-status="ending">
-          <a href="#peach-story" aria-label="Explore late peaches">
-            <div class="produce-image peach-bg"><img src="assets/peaches.svg" alt="Ripe yellow peaches with leaves" width="560" height="440"></div>
-            <div class="card-copy"><span class="season-tag ending">Ending soon</span><h3>Late peaches</h3><p>Eat the last of summer over the sink.</p><span class="season-window">May—September</span></div>
-          </a>
-        </article>
-
-        <article class="produce-card" data-status="peak">
-          <a href="#season-note-title" data-produce-detail="Fresh jujubes have a fleeting early-fall season. Try them crisp like a tiny apple now, or wait as they wrinkle and turn date-like." aria-label="Explore fresh jujubes">
-            <div class="produce-image jujube-bg"><img src="assets/jujubes.svg" alt="Fresh reddish-brown jujubes with leaves" width="560" height="440"></div>
-            <div class="card-copy"><span class="season-tag peak">Peak now</span><h3>Fresh jujubes</h3><p>Crisp, sweet and briefly here.</p><span class="season-window">September—October</span></div>
-          </a>
-        </article>
-
-        <article class="produce-card" data-status="ending">
-          <a href="#season-note-title" data-produce-detail="Eggplant still loves September warmth, but the local window begins narrowing as nights cool. Sightings can reveal how long different varieties persist." aria-label="Explore eggplant">
-            <div class="produce-image eggplant-bg"><img src="assets/eggplant.svg" alt="Glossy purple eggplants with green tops" width="560" height="440"></div>
-            <div class="card-copy"><span class="season-tag ending">Ending soon</span><h3>Eggplant</h3><p>Glossy, tender and late-summer lush.</p><span class="season-window">June—October</span></div>
-          </a>
-        </article>
+        <article class="produce-card" data-status="peak"><a href="#produce-dialog-title" data-produce-detail="California grapes are sweet and fragrant now. Concords have an especially short, perfumed season."><div class="produce-image grape-bg"><img src="assets/grapes.svg" alt="Deep purple grapes with green leaves" width="720" height="540"></div><div class="card-copy"><span class="season-tag peak">Peak now</span><h3>California grapes</h3></div></a></article>
+        <article class="produce-card" data-status="peak"><a href="#produce-dialog-title" data-produce-detail="Tomatoes are still abundant across the Bay Area, with the local season expected to run into October."><div class="produce-image tomato-bg"><img src="assets/tomatoes.svg" alt="Red and golden heirloom tomatoes" width="560" height="440"></div><div class="card-copy"><span class="season-tag peak">Peak now</span><h3>Heirloom tomatoes</h3></div></a></article>
+        <article class="produce-card" data-status="starting"><a href="#produce-dialog-title" data-produce-detail="The first crisp apples of the new crop are arriving now from California orchards."><div class="produce-image apple-bg"><img src="assets/apples.svg" alt="Red and green new crop apples" width="560" height="440"></div><div class="card-copy"><span class="season-tag starting">Starting</span><h3>New crop apples</h3></div></a></article>
+        <article class="produce-card" data-status="ending"><a href="produce/black-mission-figs.html" aria-label="Open the full Black Mission figs guide"><div class="produce-image fig-bg"><img src="assets/figs.svg" alt="Whole and halved purple figs" width="560" height="440"></div><div class="card-copy"><span class="season-tag ending">Ending soon</span><h3>Black Mission figs</h3><span class="open-guide">Full guide <span aria-hidden="true">→</span></span></div></a></article>
+        <article class="produce-card" data-status="starting"><a href="#produce-dialog-title" data-produce-detail="Pomegranates are beginning their long fall run. Look for heavy fruit with deeply colored skin."><div class="produce-image pomegranate-bg"><img src="assets/pomegranates.svg" alt="A red pomegranate showing jewel-like seeds" width="560" height="440"></div><div class="card-copy"><span class="season-tag starting">Starting</span><h3>Pomegranates</h3></div></a></article>
+        <article class="produce-card" data-status="peak"><a href="#produce-dialog-title" data-produce-detail="California pears are in their floral, honeyed prime. Check for a little give at the neck."><div class="produce-image pear-bg"><img src="assets/pears.svg" alt="Golden green California pears" width="560" height="440"></div><div class="card-copy"><span class="season-tag peak">Peak now</span><h3>California pears</h3></div></a></article>
+        <article class="produce-card" data-status="starting"><a href="#produce-dialog-title" data-produce-detail="Winter squash is arriving as summer winds down. Roast it now or keep it for colder weeks."><div class="produce-image squash-bg"><img src="assets/squash.svg" alt="Green, orange and cream winter squash" width="560" height="440"></div><div class="card-copy"><span class="season-tag starting">Starting</span><h3>Winter squash</h3></div></a></article>
+        <article class="produce-card" data-status="ending"><a href="#produce-dialog-title" data-produce-detail="Late peaches are soft, fragrant and nearly gone. Choose fruit that smells ripe before you squeeze it."><div class="produce-image peach-bg"><img src="assets/peaches.svg" alt="Ripe yellow peaches with leaves" width="560" height="440"></div><div class="card-copy"><span class="season-tag ending">Ending soon</span><h3>Late peaches</h3></div></a></article>
+        <article class="produce-card" data-status="peak"><a href="#produce-dialog-title" data-produce-detail="Fresh jujubes are crisp like tiny apples now and turn date-like as they wrinkle."><div class="produce-image jujube-bg"><img src="assets/jujubes.svg" alt="Fresh reddish-brown jujubes with leaves" width="560" height="440"></div><div class="card-copy"><span class="season-tag peak">Peak now</span><h3>Fresh jujubes</h3></div></a></article>
+        <article class="produce-card" data-status="ending"><a href="#produce-dialog-title" data-produce-detail="Eggplant still loves September warmth, but the local window narrows as nights cool."><div class="produce-image eggplant-bg"><img src="assets/eggplant.svg" alt="Glossy purple eggplants with green tops" width="560" height="440"></div><div class="card-copy"><span class="season-tag ending">Ending soon</span><h3>Eggplant</h3></div></a></article>
       </div>
       <p class="empty-state shell" data-empty-state hidden>No produce matches this view yet.</p>
     </section>
 
-    <section class="market-section" id="market-finds" aria-labelledby="market-title">
-      <div class="market-heading shell">
-        <div>
-          <p class="kicker">Find · local market watch</p>
-          <h2 id="market-title">In this week’s flyers</h2>
-          <p class="market-intro">A first look at what nearby grocers are featuring. We label the source so an advertised price never gets confused with a confirmed shelf sighting.</p>
-        </div>
-        <p class="freshness"><span aria-hidden="true"></span>Checked September 20</p>
-      </div>
-
-      <div class="market-filters shell" aria-label="Filter market flyers">
-        <button class="market-chip is-active" type="button" data-market-filter="all" aria-pressed="true">All markets</button>
-        <button class="market-chip" type="button" data-market-filter="whole-foods" aria-pressed="false">Whole Foods</button>
-        <button class="market-chip" type="button" data-market-filter="cardenas" aria-pressed="false">Cardenas</button>
-        <button class="market-chip" type="button" data-market-filter="trader-joes" aria-pressed="false">Trader Joe’s</button>
-        <button class="market-chip" type="button" data-market-filter="99-ranch" aria-pressed="false">99 Ranch</button>
-      </div>
-
-      <div class="market-grid shell" data-market-grid>
-        <article class="market-card whole-foods" data-market="whole-foods">
-          <div class="market-brand"><span class="market-mark">W</span><div><strong>Whole Foods</strong><small>Fremont · through Sep 22</small></div></div>
-          <p class="evidence verified">Official store flyer</p><h3>Medium Hass avocados</h3>
-          <p class="market-price"><strong>4 for $5</strong><span>Prime member price</span></p>
-          <p class="regular-price">Listed regular price $0.99 each</p>
-          <a href="https://www.wholefoodsmarket.com/sales-flyer?store-id=10375" target="_blank" rel="noreferrer">View the source <span aria-hidden="true">↗</span></a>
-        </article>
-
-        <article class="market-card whole-foods" data-market="whole-foods">
-          <div class="market-brand"><span class="market-mark">W</span><div><strong>Whole Foods</strong><small>Fremont · through Sep 22</small></div></div>
-          <p class="evidence verified">Official store flyer</p><h3>Organic seedless grapes</h3>
-          <p class="market-price"><strong>$2.99 / lb</strong><span>Prime member price</span></p>
-          <p class="regular-price">Listed regular price $4.69 / lb</p>
-          <a href="https://www.wholefoodsmarket.com/sales-flyer?store-id=10375" target="_blank" rel="noreferrer">View the source <span aria-hidden="true">↗</span></a>
-        </article>
-
-        <article class="market-card whole-foods" data-market="whole-foods">
-          <div class="market-brand"><span class="market-mark">W</span><div><strong>Whole Foods</strong><small>Fremont · through Sep 22</small></div></div>
-          <p class="evidence verified">Official store flyer</p><h3>Organic yellow peaches</h3>
-          <p class="market-price"><strong>$3.49 / lb</strong><span>Prime member price</span></p>
-          <p class="regular-price">Listed regular price $4.99 / lb</p>
-          <a href="https://www.wholefoodsmarket.com/sales-flyer?store-id=10375" target="_blank" rel="noreferrer">View the source <span aria-hidden="true">↗</span></a>
-        </article>
-
-        <article class="market-card cardenas" data-market="cardenas">
-          <div class="market-brand"><span class="market-mark">C</span><div><strong>Cardenas Markets</strong><small>Northern California · through Sep 22</small></div></div>
-          <p class="evidence indexed">Flyer index · confirm in store</p><h3>Large avocado</h3>
-          <p class="market-price"><strong>$0.79</strong><span>Advertised price</span></p>
-          <p class="regular-price">Selection and price can vary by branch.</p>
-          <a href="https://www.weeklyad.io/cardenas-markets" target="_blank" rel="noreferrer">Open the flyer <span aria-hidden="true">↗</span></a>
-        </article>
-
-        <article class="market-card cardenas" data-market="cardenas">
-          <div class="market-brand"><span class="market-mark">C</span><div><strong>Cardenas Markets</strong><small>Northern California · through Sep 22</small></div></div>
-          <p class="evidence indexed">Flyer index · confirm in store</p><h3>Green kale</h3>
-          <p class="market-price"><strong>$0.99</strong><span>Advertised price</span></p>
-          <p class="regular-price">Unit was not specified in the index.</p>
-          <a href="https://www.weeklyad.io/cardenas-markets" target="_blank" rel="noreferrer">Open the flyer <span aria-hidden="true">↗</span></a>
-        </article>
-
-        <article class="market-card cardenas" data-market="cardenas">
-          <div class="market-brand"><span class="market-mark">C</span><div><strong>Cardenas Markets</strong><small>Northern California · through Sep 22</small></div></div>
-          <p class="evidence indexed">Flyer index · confirm in store</p><h3>Kiwi</h3>
-          <p class="market-price"><strong>$2.00</strong><span>Advertised price</span></p>
-          <p class="regular-price">Unit was not specified in the index.</p>
-          <a href="https://www.weeklyad.io/cardenas-markets" target="_blank" rel="noreferrer">Open the flyer <span aria-hidden="true">↗</span></a>
-        </article>
-
-        <article class="market-card trader-joes" data-market="trader-joes">
-          <div class="market-brand"><span class="market-mark">TJ</span><div><strong>Trader Joe’s</strong><small>Fall Fearless Flyer · Sep 8</small></div></div>
-          <p class="evidence featured">Official product feature</p><h3>Delicata squash</h3>
-          <p class="market-price"><strong>Featured now</strong><span>Price not published</span></p>
-          <p class="regular-price">Availability can vary by Bay Area store.</p>
-          <a href="https://www.traderjoes.com/home/ff" target="_blank" rel="noreferrer">Read the Fearless Flyer <span aria-hidden="true">↗</span></a>
-        </article>
-
-        <article class="market-card trader-joes" data-market="trader-joes">
-          <div class="market-brand"><span class="market-mark">TJ</span><div><strong>Trader Joe’s</strong><small>Fall Fearless Flyer · Sep 8</small></div></div>
-          <p class="evidence featured">Official product feature</p><h3>Snowball pumpkins</h3>
-          <p class="market-price"><strong>Featured now</strong><span>Price not published</span></p>
-          <p class="regular-price">Availability can vary by Bay Area store.</p>
-          <a href="https://www.traderjoes.com/home/ff" target="_blank" rel="noreferrer">Read the Fearless Flyer <span aria-hidden="true">↗</span></a>
-        </article>
-
-        <article class="market-card ranch" data-market="99-ranch">
-          <div class="market-brand"><span class="market-mark">99</span><div><strong>99 Ranch Market</strong><small>Richmond / NorCal · through Sep 24</small></div></div>
-          <p class="evidence indexed">Current flyer found</p><h3>Northern California weekly ad</h3>
-          <p class="market-price"><strong>9 pages live</strong><span>Prices vary by region</span></p>
-          <p class="regular-price">Open the official Richmond promotions page to browse.</p>
-          <a href="https://www.99ranch.com/stores/promotions/1781" target="_blank" rel="noreferrer">Open the flyer <span aria-hidden="true">↗</span></a>
-        </article>
-      </div>
-
-      <div class="market-note shell"><strong>Flyer ≠ shelf.</strong> These are time-stamped clues. Flora will turn them into observed availability only after a store or community sighting confirms them.</div>
-    </section>
-
-    <section class="season-note shell" aria-labelledby="season-note-title">
-      <div class="season-glyph" aria-hidden="true">↗</div>
-      <div><p class="kicker">How Flora knows</p><h2 id="season-note-title">A calendar that learns from real life.</h2><p>This first view starts with expected California harvest windows. Every community sighting can become evidence of what’s actually showing up nearby—variety, place, price and date.</p></div>
-      <button class="outline-button" type="button" data-spot-button>Spot something</button>
-    </section>
-
-    <section class="three-ways shell" aria-labelledby="three-ways-title">
-      <p class="kicker">Follow the whole story</p>
-      <h2 id="three-ways-title">One plant, three ways in.</h2>
-      <div class="ways-grid">
-        <a id="find" class="way-card find" href="#market-finds"><span class="way-number">01</span><h3>Find</h3><p>See who has it, where it grew, what it costs and when it was spotted.</p><span>Browse nearby <b aria-hidden="true">→</b></span></a>
-        <a id="eat" class="way-card eat" href="#peach-story"><span class="way-number">02</span><h3>Eat</h3><p>Simple, beautiful ideas for enjoying food at the exact moment it’s best.</p><span>Get inspired <b aria-hidden="true">→</b></span></a>
-        <a id="grow" class="way-card grow" href="#season-note-title"><span class="way-number">03</span><h3>Grow</h3><p>Follow each plant from seed to flower to fruit—and try it yourself.</p><span>Learn the plant <b aria-hidden="true">→</b></span></a>
-      </div>
-    </section>
-
-    <section class="story-band" id="grapes-story" aria-labelledby="grape-title">
-      <div class="shell story-inner">
-        <div class="story-art"><img src="assets/grapes.svg" alt="" width="720" height="540"></div>
-        <div class="story-copy"><p class="eyebrow">This week’s field note</p><h2 id="grape-title">The short magic of Concord grapes.</h2><p>They smell like grape soda because grape soda was trying to smell like them. Slip the skins, simmer the pulp, or just eat a cold cluster slowly.</p><div class="story-meta"><span>California</span><span>Peak now</span><span>6 nearby sightings</span></div><a class="solid-button" href="#seasonal">Find grapes nearby</a></div>
-      </div>
-    </section>
-
-    <section class="meal-card shell" id="peach-story" aria-labelledby="meal-title">
-      <div class="meal-copy"><p class="kicker">Eat what’s ripe</p><h2 id="meal-title">Peaches with Barhi-date yogurt</h2><p>Mash very soft Barhi dates into cold yogurt until caramel-sweet. Add sliced peaches and banana; finish with maple syrup when the morning calls for it.</p><p class="meal-note">Soft · abundant · Sunday-morning food</p></div>
-      <div class="meal-art"><img src="assets/breakfast-bowl.svg" alt="A bowl of yogurt with sliced peaches, bananas and dates" width="720" height="540"></div>
-    </section>
+    <section class="market-peek shell" aria-labelledby="market-peek-title"><div><p class="kicker">Find nearby</p><h2 id="market-peek-title">This week’s market finds</h2><p>Fresh offers from four Bay Area grocers, with sources and dates.</p></div><div class="market-peek-list" aria-label="Markets tracked"><span>Whole Foods</span><span>Cardenas</span><span>Trader Joe’s</span><span>99 Ranch</span></div><a class="solid-button" href="markets.html">Browse market finds <span aria-hidden="true">→</span></a></section>
   </main>
 
-  <footer class="site-footer shell"><a class="wordmark" href="#top">flora<span aria-hidden="true">✳</span></a><p>Notice the season. Follow the plant.</p><small>Seasonal windows are a starting point, not a promise of availability.</small></footer>
-
+  <footer class="site-footer shell"><a class="wordmark" href="#top">flora<span aria-hidden="true">✳</span></a><p>Notice the season. Eat what looks good.</p></footer>
   <nav class="mobile-nav" aria-label="Primary">
-    <a class="is-active" href="#top" aria-current="page"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 10.5 12 4l8 6.5V20h-6v-6h-4v6H4v-9.5Z"/></svg><span>Season</span></a>
-    <a href="#market-finds"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M11 19a8 8 0 1 1 5.3-2l4.4 4.3-1.4 1.4-4.3-4.4A8 8 0 0 1 11 19Zm0-2a6 6 0 1 0 0-12 6 6 0 0 0 0 12Z"/></svg><span>Find</span></a>
+    <a class="is-active" href="index.html" aria-current="page"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 10.5 12 4l8 6.5V20h-6v-6h-4v6H4v-9.5Z"/></svg><span>Season</span></a>
+    <a href="markets.html"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M11 19a8 8 0 1 1 5.3-2l4.4 4.3-1.4 1.4-4.3-4.4A8 8 0 0 1 11 19Zm0-2a6 6 0 1 0 0-12 6 6 0 0 0 0 12Z"/></svg><span>Find</span></a>
     <button type="button" class="spot-nav" data-spot-button><span class="spot-circle">＋</span><span>Spot</span></button>
-    <a href="#eat"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M7 3h2v7a3 3 0 0 1-2 2.8V21H5v-8.2A3 3 0 0 1 3 10V3h2v6h2V3Zm8 0c3.3 0 6 2.7 6 6v4h-4v8h-2V3Z"/></svg><span>Eat</span></a>
-    <a href="#grow"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 21h-2v-8.1C6.3 12.4 4 10 4 6V4h2c3.2 0 5.3 1.4 6.4 3.7C13.7 5.4 16 4 20 4v2c0 4.6-2.9 7-8 7v8Z"/></svg><span>Grow</span></a>
+    <a href="produce/black-mission-figs.html#eat"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M7 3h2v7a3 3 0 0 1-2 2.8V21H5v-8.2A3 3 0 0 1 3 10V3h2v6h2V3Zm8 0c3.3 0 6 2.7 6 6v4h-4v8h-2V3Z"/></svg><span>Eat</span></a>
+    <a href="produce/black-mission-figs.html#grow"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 21h-2v-8.1C6.3 12.4 4 10 4 6V4h2c3.2 0 5.3 1.4 6.4 3.7C13.7 5.4 16 4 20 4v2c0 4.6-2.9 7-8 7v8Z"/></svg><span>Grow</span></a>
   </nav>
 
-  <dialog class="spot-dialog" data-spot-dialog aria-labelledby="spot-title">
-    <form method="dialog" class="dialog-card">
-      <button class="dialog-close" value="cancel" aria-label="Close">×</button>
-      <p class="kicker">Add to the living season</p><h2 id="spot-title">What did you spot?</h2>
-      <p>A sighting is a small piece of evidence: a food, a place, a price and a moment in time.</p>
-      <label>Food or variety<input name="food" autocomplete="off" placeholder="e.g. O’Henry peach"></label>
-      <div class="form-row"><label>Place<input name="place" autocomplete="organization" placeholder="Market or farm"></label><label>Price <span>(optional)</span><input name="price" inputmode="decimal" placeholder="$4 / lb"></label></div>
-      <label class="photo-label">Photo evidence <span>Camera support comes next</span><span class="photo-placeholder" aria-hidden="true">＋ Add a photo</span></label>
-      <button class="solid-button" value="submit" data-save-sighting>Save sighting</button>
-      <p class="form-note" role="status" data-form-status></p>
-    </form>
-  </dialog>
-
-  <dialog class="location-dialog" data-location-dialog aria-labelledby="location-title">
-    <form method="dialog" class="dialog-card compact">
-      <button class="dialog-close" value="cancel" aria-label="Close">×</button><p class="kicker">Your seasonal region</p><h2 id="location-title">Bay Area, California</h2><p>The initial calendar is tuned for Northern California. More local regions are on the way.</p><button class="solid-button" value="close">Sounds good</button>
-    </form>
-  </dialog>
-
-  <dialog class="produce-dialog" data-produce-dialog aria-labelledby="produce-dialog-title">
-    <form method="dialog" class="dialog-card compact">
-      <button class="dialog-close" value="cancel" aria-label="Close">×</button>
-      <p class="kicker">September field note</p>
-      <h2 id="produce-dialog-title" data-produce-dialog-title>In season</h2>
-      <p data-produce-dialog-copy></p>
-      <button class="solid-button" value="close">Keep browsing</button>
-    </form>
-  </dialog>
-
+  <dialog class="spot-dialog" data-spot-dialog aria-labelledby="spot-title"><form method="dialog" class="dialog-card"><button class="dialog-close" value="cancel" aria-label="Close">×</button><p class="kicker">Add to the living season</p><h2 id="spot-title">What did you spot?</h2><p>A food, a place, a price and a moment in time.</p><label>Food or variety<input name="food" autocomplete="off" placeholder="e.g. Black Mission fig"></label><div class="form-row"><label>Place<input name="place" autocomplete="organization" placeholder="Market or farm"></label><label>Price <span>(optional)</span><input name="price" inputmode="decimal" placeholder="$4 / lb"></label></div><button class="solid-button" value="submit" data-save-sighting>Save sighting</button><p class="form-note" role="status" data-form-status></p></form></dialog>
+  <dialog class="location-dialog" data-location-dialog aria-labelledby="location-title"><form method="dialog" class="dialog-card compact"><button class="dialog-close" value="cancel" aria-label="Close">×</button><p class="kicker">Your seasonal region</p><h2 id="location-title">Bay Area, California</h2><p>The calendar is tuned for Northern California.</p><button class="solid-button" value="close">Sounds good</button></form></dialog>
+  <dialog class="produce-dialog" data-produce-dialog aria-labelledby="produce-dialog-title"><form method="dialog" class="dialog-card compact"><button class="dialog-close" value="cancel" aria-label="Close">×</button><p class="kicker">September field note</p><h2 id="produce-dialog-title" data-produce-dialog-title>In season</h2><p data-produce-dialog-copy></p><button class="solid-button" value="close">Keep browsing</button></form></dialog>
   <script src="scripts/app.js" defer></script>
 </body>
 </html>
