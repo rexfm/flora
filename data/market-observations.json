@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "region": {"id": "us-ca-bay-area", "name": "Bay Area", "countrySubdivision": "California"},
+  "checkedAt": "2026-09-20T12:00:00-07:00",
+  "method": "Retailer flyers are market signals, not guaranteed inventory. Official store flyers receive the strongest verification; editorial guides and third-party flyer indexes are labeled separately.",
+  "retailers": [
+    {
+      "id": "whole-foods",
+      "name": "Whole Foods Market",
+      "location": "Fremont",
+      "sourceType": "official_store_flyer",
+      "sourceUrl": "https://www.wholefoodsmarket.com/sales-flyer?store-id=10375",
+      "validFrom": "2026-09-16",
+      "validThrough": "2026-09-22"
+    },
+    {
+      "id": "cardenas",
+      "name": "Cardenas Markets",
+      "location": "Northern California stores",
+      "sourceType": "third_party_flyer_index",
+      "sourceUrl": "https://www.weeklyad.io/cardenas-markets",
+      "validFrom": "2026-09-16",
+      "validThrough": "2026-09-22"
+    },
+    {
+      "id": "trader-joes",
+      "name": "Trader Joe's",
+      "location": "National guide; check Bay Area stores",
+      "sourceType": "official_editorial_flyer",
+      "sourceUrl": "https://www.traderjoes.com/home/ff",
+      "publishedAt": "2026-09-08"
+    },
+    {
+      "id": "99-ranch",
+      "name": "99 Ranch Market",
+      "location": "Richmond / Northern California",
+      "sourceType": "official_store_page_plus_flyer_index",
+      "sourceUrl": "https://www.99ranch.com/stores/promotions/1781",
+      "secondarySourceUrl": "https://www.weeklyad.io/99-ranch-market",
+      "validFrom": "2026-09-18",
+      "validThrough": "2026-09-24"
+    }
+  ],
+  "observations": [
+    {"id":"wfm-avocado","retailerId":"whole-foods","produceId":"avocado","name":"Medium Hass avocados","offerText":"4 for $5","regularText":"$0.99 each","priceType":"prime","unit":"4 count","verification":"official_store_flyer","confidence":0.99},
+    {"id":"wfm-grapes","retailerId":"whole-foods","produceId":"grape","name":"Organic red or green seedless grapes","offerText":"$2.99 / lb","regularText":"$4.69 / lb","priceType":"prime","unit":"pound","verification":"official_store_flyer","confidence":0.99},
+    {"id":"wfm-peaches","retailerId":"whole-foods","produceId":"peach","name":"Organic yellow peaches","offerText":"$3.49 / lb","regularText":"$4.99 / lb","priceType":"prime","unit":"pound","verification":"official_store_flyer","confidence":0.99},
+    {"id":"cardenas-avocado","retailerId":"cardenas","produceId":"avocado","name":"Large avocado","offerText":"$0.79","regularText":null,"priceType":"flyer","unit":"each","verification":"third_party_flyer_index","confidence":0.7},
+    {"id":"cardenas-kale","retailerId":"cardenas","produceId":"kale","name":"Green kale","offerText":"$0.99","regularText":null,"priceType":"flyer","unit":null,"verification":"third_party_flyer_index","confidence":0.65},
+    {"id":"cardenas-kiwi","retailerId":"cardenas","produceId":"kiwi","name":"Kiwi","offerText":"$2.00","regularText":null,"priceType":"flyer","unit":null,"verification":"third_party_flyer_index","confidence":0.6},
+    {"id":"tj-delicata","retailerId":"trader-joes","produceId":"winter-squash","name":"Delicata squash","offerText":"Featured","regularText":null,"priceType":"unpublished","unit":null,"verification":"official_editorial_flyer","confidence":0.9},
+    {"id":"tj-potatoes","retailerId":"trader-joes","produceId":"potato","name":"Dutch yellow baby potatoes","offerText":"Featured","regularText":null,"priceType":"unpublished","unit":null,"verification":"official_editorial_flyer","confidence":0.9},
+    {"id":"tj-pumpkins","retailerId":"trader-joes","produceId":"pumpkin","name":"Snowball pumpkins","offerText":"Featured","regularText":null,"priceType":"unpublished","unit":null,"verification":"official_editorial_flyer","confidence":0.9},
+    {"id":"ranch-flyer","retailerId":"99-ranch","produceId":null,"name":"Northern California weekly flyer","offerText":"9 pages live","regularText":null,"priceType":"flyer_live","unit":null,"verification":"current_flyer_index","confidence":0.78}
+  ]
+}

@@ -24,6 +24,22 @@
     link.addEventListener('click', () => filterCards(link.dataset.filterLink));
   });
 
+  const marketCards = [...document.querySelectorAll('[data-market]')];
+  const marketChips = [...document.querySelectorAll('[data-market-filter]')];
+  marketChips.forEach((chip) => {
+    chip.addEventListener('click', () => {
+      const market = chip.dataset.marketFilter;
+      marketCards.forEach((card) => {
+        card.hidden = market !== 'all' && card.dataset.market !== market;
+      });
+      marketChips.forEach((option) => {
+        const selected = option === chip;
+        option.classList.toggle('is-active', selected);
+        option.setAttribute('aria-pressed', String(selected));
+      });
+    });
+  });
+
   const produceDialog = document.querySelector('[data-produce-dialog]');
   document.querySelectorAll('[data-produce-detail]').forEach((link) => {
     link.addEventListener('click', (event) => {
