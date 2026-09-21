@@ -96,37 +96,36 @@
       // The structured static source is optional; sightings can still render.
     }
 
-    try {
-      const client = await getClient();
-      if (client) {
-        const seenSightingIds = new Set();
-        const { data: sessionData } = await client.auth.getSession();
-        if (sessionData.session) {
-          const { data } = await client.from('sightings')
-            .select('id,food_text,place_text,farm_text,price_text,observed_at,analysis:sighting_analysis(identified_items)')
-            .order('observed_at', { ascending: false }).limit(40);
-          (data || []).forEach((sighting) => {
-            const analysis = Array.isArray(sighting.analysis) ? sighting.analysis[0] : sighting.analysis;
-            const items = Array.isArray(analysis?.identified_items) ? analysis.identified_items : [];
-            const matched = items.find((item) => matchesGuide([item.name, item.variety].filter(Boolean).join(' ')));
-            if (matched || matchesGuide(sighting.food_text)) {
-              seenSightingIds.add(sighting.id);
-              leads.unshift({ kind: 'sighting', place: sighting.place_text || 'Location not named', farm: sighting.farm_text, item: matched ? [matched.name, matched.variety].filter(Boolean).join(' · ') : sighting.food_text, price: matched?.price_text || sighting.price_text, date: `Seen ${formatDate(sighting.observed_at)}` });
-            }
-          });
-        }
-        const { data: publicSightings } = await client.from('public_sightings')
-          .select('id,produce_name,variety,place_text,farm_text,price_text,observed_at')
+    const client = await getClient().catch(() => null);
+    if (client) {
+      const seenSightingIds = new Set();
+      const { data: sessionData } = await client.auth.getSession();
+      if (sessionData?.session) {
+        const { data: privateSightings } = await client.from('sightings')
+          .select('id,food_text,place_text,farm_text,price_text,observed_at,analysis:sighting_analysis(identified_items)')
           .order('observed_at', { ascending: false }).limit(40);
-        (publicSightings || []).forEach((sighting) => {
-          const itemName = [sighting.produce_name, sighting.variety].filter(Boolean).join(' · ');
-          if (!seenSightingIds.has(sighting.id) && matchesGuide(itemName)) {
-            leads.unshift({ kind: 'sighting', place: sighting.place_text || 'Location not named', farm: sighting.farm_text, item: itemName, price: sighting.price_text, date: `Seen ${formatDate(sighting.observed_at)}` });
+        (privateSightings || []).forEach((sighting) => {
+          const analysis = Array.isArray(sighting.analysis) ? sighting.analysis[0] : sighting.analysis;
+          const items = Array.isArray(analysis?.identified_items) ? analysis.identified_items : [];
+          const matched = items.find((item) => matchesGuide([item.name, item.variety].filter(Boolean).join(' ')));
+          if (matched || matchesGuide(sighting.food_text)) {
+            seenSightingIds.add(sighting.id);
+            leads.unshift({ kind: 'sighting', place: sighting.place_text || 'Location not named', farm: sighting.farm_text, item: matched ? [matched.name, matched.variety].filter(Boolean).join(' · ') : sighting.food_text, price: matched?.price_text || sighting.price_text, date: `Seen ${formatDate(sighting.observed_at)}` });
           }
         });
       }
-    } catch (error) {
-      // Private sightings are an enhancement; official leads still render.
+
+      const { data: publicSightings } = await client.from('public_sightings')
+        .select('id,produce_name,variety,place_text,farm_text,price_text,observed_at,identified_items')
+        .order('observed_at', { ascending: false }).limit(40);
+      (publicSightings || []).forEach((sighting) => {
+        const items = Array.isArray(sighting.identified_items) ? sighting.identified_items : [];
+        const matched = items.find((item) => matchesGuide([item.name, item.variety].filter(Boolean).join(' ')));
+        const primaryName = [sighting.produce_name, sighting.variety].filter(Boolean).join(' · ');
+        if (!seenSightingIds.has(sighting.id) && (matched || matchesGuide(primaryName))) {
+          leads.unshift({ kind: 'sighting', place: sighting.place_text || 'Location not named', farm: sighting.farm_text, item: matched ? [matched.name, matched.variety].filter(Boolean).join(' · ') : primaryName, price: matched?.price_text || sighting.price_text, date: `Seen ${formatDate(sighting.observed_at)}` });
+        }
+      });
     }
 
     const target = document.querySelector('[data-guide-finds]');

@@ -6,13 +6,13 @@
   <meta name="theme-color" content="#f4eddd">
   <meta name="description" content="Flora is a visual field guide to what is good to eat right now.">
   <title>Flora — Eat the season</title>
-  <link rel="stylesheet" href="styles.css?v=9">
+  <link rel="stylesheet" href="styles.css?v=10">
 </head>
 <body class="catalog-page">
   <a class="skip-link" href="#seasonal">Skip to seasonal produce</a>
   <header class="site-header shell">
     <a class="wordmark" href="index.html" aria-label="Flora home">flora<span aria-hidden="true">✳</span></a>
-    <button class="location-button" type="button" data-location-button aria-haspopup="dialog"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 21s7-6.1 7-12A7 7 0 0 0 5 9c0 5.9 7 12 7 12Zm0-9.2A2.8 2.8 0 1 0 12 6a2.8 2.8 0 0 0 0 5.8Z"/></svg><span>Bay Area</span><span aria-hidden="true">⌄</span></button>
+    <div class="header-actions"><button class="location-button" type="button" data-location-button aria-haspopup="dialog"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 21s7-6.1 7-12A7 7 0 0 0 5 9c0 5.9 7 12 7 12Zm0-9.2A2.8 2.8 0 1 0 12 6a2.8 2.8 0 0 0 0 5.8Z"/></svg><span>Bay Area</span><span aria-hidden="true">⌄</span></button><a class="account-link" href="account.html" aria-label="Your Flora account">Account</a></div>
   </header>
 
   <main id="top">
@@ -81,18 +81,18 @@
         <section class="analysis-result" data-analysis-result hidden aria-live="polite"><p class="kicker">Flora found</p><ul data-analysis-items></ul><p data-analysis-place></p></section>
       </div>
       <section class="sighting-complete" data-sighting-complete hidden aria-live="polite">
-        <p class="kicker">Saved to your sightings</p>
-        <h2 data-complete-title>Sighting saved</h2>
+        <p class="kicker">Sent to Flora</p>
+        <h2 data-complete-title>Sighting submitted</h2>
         <figure data-complete-photo hidden><img alt="Saved sighting" data-complete-image></figure>
         <p class="complete-meta" data-complete-meta></p>
-        <button class="solid-button" type="button" data-view-market-finds>See in market finds</button>
+        <button class="solid-button" type="button" data-view-market-finds>See your submissions</button>
         <button class="outline-button" type="button" data-add-another>Add another</button>
       </section>
     </form>
   </dialog>
   <dialog class="location-dialog" data-location-dialog aria-labelledby="location-title"><form method="dialog" class="dialog-card compact"><button class="dialog-close" value="cancel" aria-label="Close">×</button><p class="kicker">Your seasonal region</p><h2 id="location-title">Bay Area, California</h2><p>The calendar is tuned for Northern California.</p><button class="solid-button" value="close">Sounds good</button></form></dialog>
   <dialog class="produce-dialog" data-produce-dialog aria-labelledby="produce-dialog-title"><form method="dialog" class="dialog-card compact"><button class="dialog-close" value="cancel" aria-label="Close">×</button><p class="kicker">September field note</p><h2 id="produce-dialog-title" data-produce-dialog-title>In season</h2><p data-produce-dialog-copy></p><button class="solid-button" value="close">Keep browsing</button></form></dialog>
-  <script src="scripts/config.js?v=9"></script>
-  <script src="scripts/app.js?v=9" defer></script>
+  <script src="scripts/config.js?v=10"></script>
+  <script src="scripts/app.js?v=10" defer></script>
 </body>
 </html>

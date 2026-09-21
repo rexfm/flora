@@ -290,19 +290,33 @@
     const client = await getSupabaseClient();
     if (!client) return false;
     const { data: sessionData } = await client.auth.getSession();
-    if (!sessionData.session) return false;
+    let ownSightings = [];
+    if (sessionData.session) {
+      const { data, error } = await client.from('sightings')
+        .select('id,food_text,place_text,farm_text,price_text,photo_path,status,observed_at,analysis:sighting_analysis(identified_items)')
+        .order('observed_at', { ascending: false })
+        .limit(12);
+      if (!error) ownSightings = data || [];
+    }
 
-    const { data, error } = await client.from('sightings')
-      .select('id,food_text,place_text,farm_text,price_text,photo_path,status,observed_at,analysis:sighting_analysis(identified_items)')
+    const { data: sharedData, error: sharedError } = await client.from('public_sightings')
+      .select('id,produce_name,variety,place_text,farm_text,price_text,observed_at,status,identified_items')
       .order('observed_at', { ascending: false })
-      .limit(12);
-    if (error) {
-      if (marketLoadCopy) marketLoadCopy.textContent = 'Your saved sightings could not be loaded.';
+      .limit(24);
+    if (sharedError && !ownSightings.length) {
+      if (marketLoadCopy) marketLoadCopy.textContent = 'Community sightings could not be loaded.';
       if (marketLoadStatus) marketLoadStatus.hidden = false;
       return false;
     }
 
-    const sightings = await Promise.all((data || []).map(async (sighting) => {
+    const ownIds = new Set(ownSightings.map((sighting) => sighting.id));
+    const sharedSightings = (sharedData || []).filter((sighting) => !ownIds.has(sighting.id)).map((sighting) => ({
+      ...sighting,
+      food_text: [sighting.produce_name, sighting.variety].filter(Boolean).join(' · '),
+      photo_path: null,
+      analysis: { identified_items: sighting.identified_items }
+    }));
+    const sightings = await Promise.all([...ownSightings, ...sharedSightings].map(async (sighting) => {
       const analysis = Array.isArray(sighting.analysis) ? sighting.analysis[0] : sighting.analysis;
       const identifiedItems = Array.isArray(analysis?.identified_items) ? analysis.identified_items : [];
       if (!sighting.photo_path) return { ...sighting, identifiedItems, photoUrl: null };
@@ -621,7 +635,7 @@
       price_text: sighting.price || null,
       observed_at: sighting.observedAt,
       photo_path: photoPath,
-      status: photoPath ? 'pending_analysis' : 'pending_review',
+      status: photoPath ? 'pending_analysis' : 'draft',
       location_source: sighting.location ? sighting.locationSource : null,
       accuracy_meters: sighting.location?.accuracy ?? null,
       location: sighting.location
@@ -659,6 +673,20 @@
       observed_at: sighting.observedAt
     }).eq('id', id);
     if (error) throw error;
+  }
+
+  async function submitOnlineSighting(id) {
+    const client = await getSupabaseClient();
+    if (!client) throw new Error('Online sync is not configured');
+    const { data: sessionData } = await client.auth.getSession();
+    const user = sessionData.session?.user;
+    if (!user || user.is_anonymous) {
+      window.location.href = `account.html?submit=${encodeURIComponent(id)}`;
+      return false;
+    }
+    const { error } = await client.rpc('submit_sighting_for_review', { p_sighting_id: id });
+    if (error) throw error;
+    return true;
   }
 
   function showSightingComplete(sighting) {
@@ -725,12 +753,12 @@
 
     if (sightingPhase === 'review' && currentSightingId) {
       form.classList.add('is-saving');
-      setFormStatus('Saving your sighting…');
+      setFormStatus('Submitting your sighting for review…');
       try {
         await updateOnlineSighting(currentSightingId, reviewedSighting);
-        showSightingComplete(reviewedSighting);
+        if (await submitOnlineSighting(currentSightingId)) showSightingComplete(reviewedSighting);
       } catch (error) {
-        setFormStatus('Your edits could not be saved yet. Please try again.', 'error');
+        setFormStatus('Your sighting could not be submitted yet. Please try again.', 'error');
       } finally {
         form.classList.remove('is-saving');
       }
@@ -765,12 +793,12 @@
       }
       currentSightingId = result.id;
       sightingPhase = 'review';
-      saveButton.textContent = 'Save sighting';
+      saveButton.textContent = 'Submit for review';
       const outcome = result.analysisQueued
-        ? `${result.analysis?.items?.length || 1} item${result.analysis?.items?.length === 1 ? '' : 's'} found. Review the details, then save.`
+        ? `${result.analysis?.items?.length || 1} item${result.analysis?.items?.length === 1 ? '' : 's'} found. Review the details, then submit.`
         : result.analysisPending
-          ? 'Photo saved privately. Review what you entered, then save.'
-          : 'Review the details, then save.';
+          ? 'Photo saved privately. Review what you entered, then submit.'
+          : 'Review the details, then submit.';
       setFormStatus(outcome, result.analysisPending ? 'error' : 'success');
     } catch (error) {
       try {
@@ -786,7 +814,7 @@
   });
 
   document.querySelector('[data-view-market-finds]')?.addEventListener('click', () => {
-    window.location.href = 'markets.html';
+    window.location.href = 'account.html';
   });
 
   document.querySelector('[data-add-another]')?.addEventListener('click', resetSightingForm);

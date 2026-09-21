@@ -134,7 +134,7 @@ Deno.serve(async (request) => {
       price_text: sighting.price_text || primary.price_text,
       place_text: sighting.place_text || result.place_name,
       farm_text: sighting.farm_text || result.farm_name,
-      status: 'pending_review'
+      status: 'draft'
     }).eq('id', sighting.id);
 
     return json({ analysis: result }, 200, headers);

@@ -28,7 +28,24 @@ The Spot flow supports the iPhone camera and photo library. It can optionally ca
 
 Photo-first sightings may leave the food and price fields blank. The private analysis function returns a structured list of visible items, varieties, sign prices and any visibly printed market name, then fills those fields in the Spot sheet. Place entry also offers a small built-in market autocomplete. When GPS is explicitly added, Flora can query its own place directory for nearby suggestions; it does not send coordinates to OpenAI.
 
-Raw sightings are readable only by their owner. Any future community feed must read `public_sightings`, a deliberately narrower view that excludes user IDs, private photo paths and exact coordinates. AI labels remain pending review rather than automatically publishing a sighting.
+Raw sightings are readable only by their owner and Flora admins. Contributors can convert the anonymous session created during their first upload into a permanent email account, preserving the same user ID and all attached sightings. Submitting a reviewed sighting places it in an admin queue; only an admin can confirm or reject it.
+
+The community feed reads `public_sightings`, a deliberately narrower view containing only approved produce labels, market, farm, price, date, and an optional coarse location. It excludes contributor IDs, email addresses, private photo paths, original photos, and exact coordinates. A multi-item analysis is reduced to the same public-safe item fields so each fruit in a photo can appear on its own guide.
+
+## Accounts and review
+
+`account.html` uses passwordless email authentication. If the visitor already has an anonymous upload session, Flora links the email identity to that user so their existing sightings stay attached. In Supabase Authentication settings, enable manual identity linking and add `https://rexfm.github.io/flora/account.html*` to the allowed redirect URLs.
+
+`admin.html` is protected in the database as well as the interface. To make the first account an admin, sign in once and then use the Supabase SQL editor with the account email:
+
+```sql
+update public.profiles p
+set role = 'admin'
+from auth.users u
+where p.id = u.id and lower(u.email) = lower('you@example.com');
+```
+
+Member-facing code cannot change roles or approve records. Row Level Security permits admins to read review photos and pending submissions, and the `review_sighting` function is the only app action that publishes or rejects a submission.
 
 The browser uses the public values in `scripts/config.js`. That publishable key is intentionally safe to ship in a website because access is enforced by Row Level Security. Never put a Supabase secret key or an OpenAI API key in that file.
 
