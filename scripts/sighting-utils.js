@@ -51,6 +51,12 @@
     return normalize(right).length > normalize(left).length ? right : left;
   }
 
+  function cleanItem(item) {
+    const cleaned = { ...item };
+    if (normalize(cleaned.name) === normalize(cleaned.variety)) cleaned.variety = null;
+    return cleaned;
+  }
+
   function mergeItems(left, right) {
     const merged = new Map();
     [...left, ...right].forEach((item) => {
@@ -59,16 +65,16 @@
       const currentKey = [...merged.keys()].find((candidate) => sameItem(merged.get(candidate), item));
       const current = currentKey ? merged.get(currentKey) : null;
       if (!current) {
-        merged.set(key, { ...item });
+        merged.set(key, cleanItem(item));
         return;
       }
-      merged.set(currentKey, {
+      merged.set(currentKey, cleanItem({
         ...current,
         ...item,
         name: prefer(current.name, item.name),
         variety: prefer(current.variety, item.variety) || null,
         price_text: prefer(current.price_text, item.price_text) || null
-      });
+      }));
     });
     return [...merged.values()];
   }
