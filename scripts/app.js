@@ -201,6 +201,11 @@
   async function findNearbyPlaces(location) {
     const client = await getSupabaseClient();
     if (!client) return [];
+    const { data: sessionData } = await client.auth.getSession();
+    if (!sessionData.session) {
+      const { error: authError } = await client.auth.signInAnonymously();
+      if (authError) return [];
+    }
     const { data, error } = await client.rpc('nearby_places', {
       longitude: location.longitude,
       latitude: location.latitude,
