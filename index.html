@@ -58,9 +58,9 @@
       <button class="dialog-close" value="cancel" aria-label="Close">×</button>
       <p class="kicker">Add to the living season</p>
       <h2 id="spot-title">What did you spot?</h2>
-      <p>A food, a place, a price and a photo from right now.</p>
-      <label>Food or variety<input name="food" autocomplete="off" placeholder="e.g. Black Mission fig"></label>
-      <div class="form-row"><label>Place<input name="place" autocomplete="organization" placeholder="Market or farm"></label><label>Price <span>(optional)</span><input name="price" inputmode="decimal" placeholder="$4 / lb"></label></div>
+      <p>Start with a photo. Flora can label what it sees and read a visible price.</p>
+      <label>Food or variety <span>(optional with a photo)</span><input name="food" autocomplete="off" placeholder="Flora can identify this"></label>
+      <div class="form-row"><label class="place-field">Place <span>(optional)</span><input name="place" autocomplete="off" placeholder="Start typing a market" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="place-suggestions"><span class="place-hint">Market suggestions appear as you type.</span><ul class="place-suggestions" id="place-suggestions" data-place-suggestions role="listbox" hidden></ul></label><label>Price <span>(optional)</span><input name="price" inputmode="decimal" placeholder="Flora can read the sign"></label></div>
       <fieldset class="photo-fieldset">
         <legend>Photo evidence <span>(optional)</span></legend>
         <div class="photo-actions" data-photo-actions>
@@ -76,6 +76,7 @@
       </div>
       <button class="solid-button" value="submit" data-save-sighting>Share sighting</button>
       <p class="form-note" role="status" aria-live="polite" data-form-status></p>
+      <section class="analysis-result" data-analysis-result hidden aria-live="polite"><p class="kicker">Flora found</p><ul data-analysis-items></ul><p data-analysis-place></p></section>
     </form>
   </dialog>
   <dialog class="location-dialog" data-location-dialog aria-labelledby="location-title"><form method="dialog" class="dialog-card compact"><button class="dialog-close" value="cancel" aria-label="Close">×</button><p class="kicker">Your seasonal region</p><h2 id="location-title">Bay Area, California</h2><p>The calendar is tuned for Northern California.</p><button class="solid-button" value="close">Sounds good</button></form></dialog>

@@ -2,6 +2,18 @@
   const SIGHTINGS_DB = 'flora-local';
   const SIGHTINGS_STORE = 'sightings';
   const MAX_PHOTO_EDGE = 1600;
+  const CURATED_PLACES = [
+    'Whole Foods Market',
+    'Trader Joe’s',
+    '99 Ranch Market',
+    'Cardenas Markets',
+    'Berkeley Bowl',
+    'Monterey Market',
+    'Rainbow Grocery',
+    'Alemany Farmers’ Market',
+    'Ferry Plaza Farmers Market',
+    'Grand Lake Farmers Market'
+  ];
   let supabaseClientPromise = null;
 
   function getSupabaseClient() {
@@ -140,7 +152,13 @@
   const formStatus = document.querySelector('[data-form-status]');
   const locationButton = document.querySelector('[data-use-location]');
   const locationLabel = document.querySelector('[data-location-label]');
+  const placeInput = spotDialog?.querySelector('[name="place"]');
+  const placeSuggestions = document.querySelector('[data-place-suggestions]');
+  const analysisResult = document.querySelector('[data-analysis-result]');
+  const analysisItems = document.querySelector('[data-analysis-items]');
+  const analysisPlace = document.querySelector('[data-analysis-place]');
   let selectedLocation = null;
+  let nearbyPlaces = [];
 
   function setFormStatus(message, kind = '') {
     if (!formStatus) return;
@@ -149,13 +167,56 @@
     formStatus.classList.toggle('is-success', kind === 'success');
   }
 
+  function renderPlaceSuggestions(query = '') {
+    if (!placeInput || !placeSuggestions) return;
+    const normalized = query.trim().toLocaleLowerCase();
+    const candidates = [...new Set([...nearbyPlaces, ...CURATED_PLACES])]
+      .filter((name) => !normalized || name.toLocaleLowerCase().includes(normalized))
+      .slice(0, 6);
+    placeSuggestions.replaceChildren(...candidates.map((name) => {
+      const item = document.createElement('li');
+      item.setAttribute('role', 'option');
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.textContent = name;
+      button.addEventListener('click', () => {
+        placeInput.value = name;
+        placeSuggestions.hidden = true;
+        placeInput.setAttribute('aria-expanded', 'false');
+      });
+      item.append(button);
+      return item;
+    }));
+    placeSuggestions.hidden = candidates.length === 0;
+    placeInput.setAttribute('aria-expanded', String(candidates.length > 0));
+  }
+
+  placeInput?.addEventListener('focus', () => renderPlaceSuggestions(placeInput.value));
+  placeInput?.addEventListener('input', () => renderPlaceSuggestions(placeInput.value));
+  placeInput?.addEventListener('blur', () => setTimeout(() => {
+    if (placeSuggestions) placeSuggestions.hidden = true;
+    placeInput.setAttribute('aria-expanded', 'false');
+  }, 120));
+
+  async function findNearbyPlaces(location) {
+    const client = await getSupabaseClient();
+    if (!client) return [];
+    const { data, error } = await client.rpc('nearby_places', {
+      longitude: location.longitude,
+      latitude: location.latitude,
+      radius_meters: 1500
+    });
+    if (error || !Array.isArray(data)) return [];
+    return data.map((place) => place.name).filter(Boolean);
+  }
+
   locationButton?.addEventListener('click', () => {
     if (!navigator.geolocation) {
       setFormStatus('Location is not available in this browser.', 'error');
       return;
     }
     locationLabel.textContent = 'Finding location…';
-    navigator.geolocation.getCurrentPosition((position) => {
+    navigator.geolocation.getCurrentPosition(async (position) => {
       selectedLocation = {
         latitude: position.coords.latitude,
         longitude: position.coords.longitude,
@@ -163,13 +224,32 @@
       };
       locationButton.classList.add('is-ready');
       locationLabel.textContent = `Location added · about ${selectedLocation.accuracy} m`;
-      setFormStatus('Location will be stored privately with this sighting.');
+      nearbyPlaces = await findNearbyPlaces(selectedLocation);
+      if (!placeInput.value && nearbyPlaces.length) placeInput.value = nearbyPlaces[0];
+      setFormStatus(nearbyPlaces.length
+        ? `Location added. Suggested ${nearbyPlaces[0]} from Flora’s place directory.`
+        : 'Location added privately. Start typing to choose the market.');
     }, () => {
       selectedLocation = null;
       locationLabel.textContent = 'Try current location again';
       setFormStatus('Location was not added. You can still share the sighting.', 'error');
     }, { enableHighAccuracy: true, timeout: 12000, maximumAge: 30000 });
   });
+
+  function renderAnalysis(analysis) {
+    if (!analysisResult || !analysisItems || !analysis?.items?.length) return;
+    analysisItems.replaceChildren(...analysis.items.map((item) => {
+      const row = document.createElement('li');
+      const name = document.createElement('strong');
+      name.textContent = [item.name, item.variety].filter(Boolean).join(' · ');
+      const price = document.createElement('span');
+      price.textContent = item.price_text || 'Price not visible';
+      row.append(name, price);
+      return row;
+    }));
+    analysisPlace.textContent = analysis.place_name ? `Place seen in photo: ${analysis.place_name}` : '';
+    analysisResult.hidden = false;
+  }
 
   function clearPhoto() {
     selectedPhoto = null;
@@ -250,12 +330,16 @@
     }
 
     if (photoPath) {
-      const { error: analysisError } = await client.functions.invoke('analyze-sighting', {
+      const { data: analysisData, error: analysisError } = await client.functions.invoke('analyze-sighting', {
         body: { sightingId: sighting.id }
       });
-      return { analysisQueued: !analysisError, analysisPending: Boolean(analysisError) };
+      return {
+        analysisQueued: !analysisError,
+        analysisPending: Boolean(analysisError),
+        analysis: analysisData?.analysis ?? null
+      };
     }
-    return { analysisQueued: false, analysisPending: false };
+    return { analysisQueued: false, analysisPending: false, analysis: null };
   }
 
   const saveButton = document.querySelector('[data-save-sighting]');
@@ -263,9 +347,8 @@
     event.preventDefault();
     const foodInput = spotDialog.querySelector('[name="food"]');
     const food = foodInput.value.trim();
-    if (!food) {
-      setFormStatus('Add a food or variety to save this sighting.', 'error');
-      foodInput.focus();
+    if (!food && !selectedPhoto) {
+      setFormStatus('Add a photo or type the food you spotted.', 'error');
       return;
     }
     const form = spotDialog.querySelector('form');
@@ -273,7 +356,7 @@
     setFormStatus('Preparing a private, metadata-free copy…');
     const sighting = {
       id: typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : `sighting-${Date.now()}`,
-      food,
+      food: food || 'Photo sighting',
       place: form.elements.place.value.trim(),
       price: form.elements.price.value.trim(),
       observedAt: new Date().toISOString(),
@@ -283,11 +366,22 @@
       const cleanPhoto = await makeMetadataFreePhoto(selectedPhoto);
       setFormStatus('Sharing sighting…');
       const result = await saveOnlineSighting(sighting, cleanPhoto);
+      if (result.analysis) {
+        const names = result.analysis.items.map((item) => [item.name, item.variety].filter(Boolean).join(' · '));
+        foodInput.value = names.join(', ');
+        if (!form.elements.price.value && result.analysis.items[0]?.price_text) {
+          form.elements.price.value = result.analysis.items[0].price_text;
+        }
+        if (!form.elements.place.value && result.analysis.place_name) {
+          form.elements.place.value = result.analysis.place_name;
+        }
+        renderAnalysis(result.analysis);
+      }
       const outcome = result.analysisQueued
-        ? `${food} shared and identified.`
+        ? `${result.analysis?.items?.length || 1} item${result.analysis?.items?.length === 1 ? '' : 's'} labeled and shared.`
         : result.analysisPending
-          ? `${food} shared. Photo saved; identification could not run yet.`
-          : `${food} shared.`;
+          ? `${sighting.food} shared. Photo saved; identification could not run yet.`
+          : `${sighting.food} shared.`;
       setFormStatus(outcome, result.analysisPending ? 'error' : 'success');
     } catch (error) {
       try {

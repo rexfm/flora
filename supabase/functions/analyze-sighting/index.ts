@@ -68,8 +68,8 @@ Deno.serve(async (request) => {
         store: false,
         reasoning: { effort: 'none' },
         input: [{ role: 'user', content: [
-          { type: 'input_text', text: `Identify the produce in this market sighting. The contributor wrote food=${JSON.stringify(sighting.food_text)}, place=${JSON.stringify(sighting.place_text)}, price=${JSON.stringify(sighting.price_text)}. Be conservative: report uncertainty rather than inventing a variety. Never infer an exact location from the image.` },
-          { type: 'input_image', image_url: signed.signedUrl, detail: 'low' }
+          { type: 'input_text', text: `Identify every distinct produce or food item visible in this market sighting. Read a price only when it is legible in the photo, preserving currency, promotional wording, quantity, and unit such as each, bunch, bag, or per pound. Look for a visible store or market name, but never infer a place from visual style or hidden metadata. The contributor wrote food=${JSON.stringify(sighting.food_text)}, place=${JSON.stringify(sighting.place_text)}, price=${JSON.stringify(sighting.price_text)}. Be conservative: use null rather than inventing a variety, price, unit, condition, or place.` },
+          { type: 'input_image', image_url: signed.signedUrl, detail: 'high' }
         ] }],
         text: { format: {
           type: 'json_schema',
@@ -78,13 +78,24 @@ Deno.serve(async (request) => {
           schema: {
             type: 'object', additionalProperties: false,
             properties: {
-              produce_name: { type: 'string' },
-              variety: { type: ['string', 'null'] },
-              condition: { type: ['string', 'null'], description: 'A short visible freshness or ripeness note.' },
-              confidence: { type: 'number', minimum: 0, maximum: 1 },
+              items: {
+                type: 'array', maxItems: 12,
+                items: {
+                  type: 'object', additionalProperties: false,
+                  properties: {
+                    name: { type: 'string' },
+                    variety: { type: ['string', 'null'] },
+                    price_text: { type: ['string', 'null'], description: 'The full visible price, promotion, quantity and unit exactly as displayed.' },
+                    condition: { type: ['string', 'null'], description: 'A short visible freshness or ripeness note.' },
+                    confidence: { type: 'number', minimum: 0, maximum: 1 }
+                  },
+                  required: ['name', 'variety', 'price_text', 'condition', 'confidence']
+                }
+              },
+              place_name: { type: ['string', 'null'], description: 'Only a store, farm, stand, or market name visibly readable in the photo.' },
               evidence: { type: 'array', items: { type: 'string' }, maxItems: 4 }
             },
-            required: ['produce_name', 'variety', 'condition', 'confidence', 'evidence']
+            required: ['items', 'place_name', 'evidence']
           }
         } }
       })
@@ -99,33 +110,30 @@ Deno.serve(async (request) => {
     const outputText = readOutputText(ai);
     if (!outputText) throw new Error('The model returned no structured result');
     const result = JSON.parse(outputText);
+    const items = Array.isArray(result.items) ? result.items : [];
+    const primary = items[0] ?? { name: 'Unidentified food', variety: null, price_text: null, condition: null, confidence: 0 };
+    const inferredFood = items.map((item: { name: string; variety?: string | null }) => [item.name, item.variety].filter(Boolean).join(' · ')).join(', ');
 
     const { error: analysisError } = await admin.from('sighting_analysis').upsert({
       sighting_id: sighting.id,
-      produce_name: result.produce_name,
-      variety: result.variety,
-      condition: result.condition,
-      confidence: result.confidence,
-      evidence: { visible_clues: result.evidence },
+      produce_name: primary.name,
+      variety: primary.variety,
+      condition: primary.condition,
+      confidence: primary.confidence,
+      identified_items: items,
+      evidence: { visible_clues: result.evidence, visible_place_name: result.place_name },
       model: 'gpt-5.6-luna'
     }, { onConflict: 'sighting_id' });
     if (analysisError) throw analysisError;
 
     await admin.from('sightings').update({
-      produce_name: result.produce_name,
-      variety: result.variety,
-      status: result.confidence >= 0.72 ? 'confirmed' : 'pending_review'
+      food_text: sighting.food_text === 'Photo sighting' && inferredFood ? inferredFood : sighting.food_text,
+      produce_name: primary.name,
+      variety: primary.variety,
+      price_text: sighting.price_text || primary.price_text,
+      place_text: sighting.place_text || result.place_name,
+      status: 'pending_review'
     }).eq('id', sighting.id);
-
-    if (result.confidence >= 0.72) {
-      await admin.from('aura_ledger').upsert({
-        user_id: sighting.user_id,
-        event_type: 'verified_sighting',
-        points: 10,
-        source_type: 'sighting',
-        source_id: sighting.id
-      }, { onConflict: 'user_id,event_type,source_type,source_id' });
-    }
 
     return json({ analysis: result }, 200, headers);
   } catch (error) {

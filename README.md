@@ -26,6 +26,10 @@ Market flyer evidence lives in `data/market-observations.json`. Each retailer re
 
 The Spot flow supports the iPhone camera and photo library. It can optionally capture the browser's current GPS position after an explicit tap. Before any upload, the browser redraws the image into a new JPEG, removing EXIF and other embedded metadata. Exact coordinates and photos stay private; public sightings expose only approved produce and place information.
 
+Photo-first sightings may leave the food and price fields blank. The private analysis function returns a structured list of visible items, varieties, sign prices and any visibly printed market name, then fills those fields in the Spot sheet. Place entry also offers a small built-in market autocomplete. When GPS is explicitly added, Flora can query its own place directory for nearby suggestions; it does not send coordinates to OpenAI.
+
+Raw sightings are readable only by their owner. Any future community feed must read `public_sightings`, a deliberately narrower view that excludes user IDs, private photo paths and exact coordinates. AI labels remain pending review rather than automatically publishing a sighting.
+
 The browser uses the public values in `scripts/config.js`. That publishable key is intentionally safe to ship in a website because access is enforced by Row Level Security. Never put a Supabase secret key or an OpenAI API key in that file.
 
 If online sync is temporarily unavailable, the cleaned photo and sighting are retained in IndexedDB on that device.
