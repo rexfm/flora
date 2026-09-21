@@ -99,6 +99,7 @@
     const client = await getClient().catch(() => null);
     if (client) {
       const seenSightingIds = new Set();
+      const rawSightings = [];
       const { data: sessionData } = await client.auth.getSession();
       if (sessionData?.session) {
         const { data: privateSightings } = await client.from('sightings')
@@ -106,12 +107,8 @@
           .order('observed_at', { ascending: false }).limit(40);
         (privateSightings || []).forEach((sighting) => {
           const analysis = Array.isArray(sighting.analysis) ? sighting.analysis[0] : sighting.analysis;
-          const items = Array.isArray(analysis?.identified_items) ? analysis.identified_items : [];
-          const matched = items.find((item) => matchesGuide([item.name, item.variety].filter(Boolean).join(' ')));
-          if (matched || matchesGuide(sighting.food_text)) {
-            seenSightingIds.add(sighting.id);
-            leads.unshift({ kind: 'sighting', place: sighting.place_text || 'Location not named', farm: sighting.farm_text, item: matched ? [matched.name, matched.variety].filter(Boolean).join(' · ') : sighting.food_text, price: matched?.price_text || sighting.price_text, date: `Seen ${formatDate(sighting.observed_at)}` });
-          }
+          seenSightingIds.add(sighting.id);
+          rawSightings.push({ ...sighting, identifiedItems: Array.isArray(analysis?.identified_items) ? analysis.identified_items : [] });
         });
       }
 
@@ -119,19 +116,39 @@
         .select('id,produce_name,variety,place_text,farm_text,price_text,observed_at,identified_items')
         .order('observed_at', { ascending: false }).limit(40);
       (publicSightings || []).forEach((sighting) => {
-        const items = Array.isArray(sighting.identified_items) ? sighting.identified_items : [];
-        const matched = items.find((item) => matchesGuide([item.name, item.variety].filter(Boolean).join(' ')));
-        const primaryName = [sighting.produce_name, sighting.variety].filter(Boolean).join(' · ');
-        if (!seenSightingIds.has(sighting.id) && (matched || matchesGuide(primaryName))) {
-          leads.unshift({ kind: 'sighting', place: sighting.place_text || 'Location not named', farm: sighting.farm_text, item: matched ? [matched.name, matched.variety].filter(Boolean).join(' · ') : primaryName, price: matched?.price_text || sighting.price_text, date: `Seen ${formatDate(sighting.observed_at)}` });
-        }
+        if (seenSightingIds.has(sighting.id)) return;
+        rawSightings.push({
+          ...sighting,
+          food_text: [sighting.produce_name, sighting.variety].filter(Boolean).join(' · '),
+          identifiedItems: Array.isArray(sighting.identified_items) ? sighting.identified_items : []
+        });
+      });
+
+      const consolidatedSightings = window.FloraSightings?.consolidate(rawSightings) || rawSightings;
+      consolidatedSightings.forEach((sighting) => {
+        const matched = sighting.identifiedItems.find((item) => matchesGuide([item.name, item.variety].filter(Boolean).join(' ')));
+        if (!matched && !matchesGuide(sighting.food_text)) return;
+        leads.unshift({
+          kind: 'sighting',
+          place: sighting.place_text || 'Location not named',
+          farm: sighting.farm_text,
+          item: matched ? [matched.name, matched.variety].filter(Boolean).join(' · ') : sighting.food_text,
+          price: matched?.price_text || sighting.price_text,
+          date: `Seen ${formatDate(sighting.observed_at)}`
+        });
       });
     }
 
+    const uniqueLeads = [];
+    leads.forEach((lead) => {
+      const key = window.FloraSightings?.normalize([lead.kind, lead.item, lead.place, lead.farm, lead.price, lead.date].join(' '));
+      if (!key || !uniqueLeads.some((entry) => entry.key === key)) uniqueLeads.push({ key, lead });
+    });
+    const displayedLeads = uniqueLeads.map((entry) => entry.lead);
     const target = document.querySelector('[data-guide-finds]');
-    document.querySelector('[data-guide-evidence]').textContent = leads.length ? `${leads.length} current ${leads.length === 1 ? 'lead' : 'leads'}` : 'No current lead';
-    if (leads.length) {
-      target.replaceChildren(...leads.map(leadCard));
+    document.querySelector('[data-guide-evidence]').textContent = displayedLeads.length ? `${displayedLeads.length} current ${displayedLeads.length === 1 ? 'lead' : 'leads'}` : 'No current lead';
+    if (displayedLeads.length) {
+      target.replaceChildren(...displayedLeads.map(leadCard));
       return;
     }
 

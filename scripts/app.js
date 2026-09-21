@@ -325,7 +325,8 @@
     }));
 
     const flyerCards = [...marketGrid.querySelectorAll('[data-market]:not([data-personal-sighting])')];
-    const sightingItems = sightings.flatMap((sighting) => {
+    const consolidatedSightings = window.FloraSightings?.consolidate(sightings) || sightings;
+    const sightingItems = consolidatedSightings.flatMap((sighting) => {
       if (!sighting.identifiedItems.length) {
         return [{ ...sighting, itemName: sighting.food_text, itemPrice: sighting.price_text, itemIndex: 0 }];
       }
