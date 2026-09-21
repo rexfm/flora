@@ -165,94 +165,115 @@
     link.addEventListener('click', () => filterCards(link.dataset.filterLink));
   });
 
-  const marketCards = [...document.querySelectorAll('[data-market]')];
+  const marketGrid = document.querySelector('[data-market-grid]');
+  let marketCards = [...document.querySelectorAll('[data-market]')];
   const marketChips = [...document.querySelectorAll('[data-market-filter]')];
-  marketChips.forEach((chip) => {
-    chip.addEventListener('click', () => {
-      const market = chip.dataset.marketFilter;
-      marketCards.forEach((card) => {
-        card.hidden = market !== 'all' && card.dataset.market !== market;
-      });
-      marketChips.forEach((option) => {
-        const selected = option === chip;
-        option.classList.toggle('is-active', selected);
-        option.setAttribute('aria-pressed', String(selected));
-      });
+  let activeMarketFilter = 'all';
+
+  function applyMarketFilter(market) {
+    activeMarketFilter = market;
+    marketCards.forEach((card) => {
+      card.hidden = market !== 'all' && card.dataset.market !== market;
     });
+    marketChips.forEach((option) => {
+      const selected = option.dataset.marketFilter === market;
+      option.classList.toggle('is-active', selected);
+      option.setAttribute('aria-pressed', String(selected));
+    });
+  }
+
+  marketChips.forEach((chip) => {
+    chip.addEventListener('click', () => applyMarketFilter(chip.dataset.marketFilter));
   });
 
-  const mySightingsSection = document.querySelector('[data-my-sightings]');
-  const sightingsRail = document.querySelector('[data-sightings-rail]');
-  const sightingsMessage = document.querySelector('[data-sightings-message]');
-
-  function renderSightingCard(sighting) {
+  function renderMarketSightingCard(sighting) {
     const card = document.createElement('article');
-    card.className = 'personal-sighting';
-    const visual = document.createElement('div');
-    visual.className = 'personal-sighting-photo';
+    card.className = 'market-card community';
+    card.dataset.market = 'community';
+    card.dataset.personalSighting = sighting.id;
     if (sighting.photoUrl) {
+      const visual = document.createElement('figure');
+      visual.className = 'market-card-photo';
       const image = document.createElement('img');
       image.src = sighting.photoUrl;
       image.alt = `Photo of ${sighting.food_text}`;
       image.loading = 'lazy';
       visual.append(image);
-    } else {
-      const fallback = document.createElement('span');
-      fallback.setAttribute('aria-hidden', 'true');
-      fallback.textContent = '✳';
-      visual.append(fallback);
+      card.append(visual);
     }
 
-    const copy = document.createElement('div');
-    copy.className = 'personal-sighting-copy';
-    const state = document.createElement('span');
-    state.className = 'personal-sighting-state';
-    state.textContent = sighting.status === 'pending_analysis' ? 'Identifying' : sighting.status === 'confirmed' ? 'Shared' : 'Saved';
+    const dateText = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(new Date(sighting.observed_at));
+    const brand = document.createElement('div');
+    brand.className = 'market-brand';
+    const mark = document.createElement('span');
+    mark.className = 'market-mark';
+    mark.textContent = 'S';
+    const brandCopy = document.createElement('div');
+    const place = document.createElement('strong');
+    place.textContent = sighting.place_text || 'Community sighting';
+    const date = document.createElement('small');
+    date.textContent = `Seen ${dateText}`;
+    brandCopy.append(place, date);
+    brand.append(mark, brandCopy);
+
+    const evidence = document.createElement('p');
+    evidence.className = 'evidence community-evidence';
+    evidence.textContent = sighting.status === 'pending_analysis' ? 'Identifying photo' : 'Your sighting';
     const title = document.createElement('h3');
     title.textContent = sighting.food_text;
-    const details = document.createElement('p');
-    details.textContent = [sighting.place_text, sighting.price_text].filter(Boolean).join(' · ') || 'Details saved';
-    const date = document.createElement('time');
-    date.dateTime = sighting.observed_at;
-    date.textContent = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(new Date(sighting.observed_at));
-    copy.append(state, title, details, date);
-    card.append(visual, copy);
+    const price = document.createElement('p');
+    price.className = 'market-price';
+    const priceValue = document.createElement('strong');
+    priceValue.textContent = sighting.price_text || 'Price not noted';
+    const priceSource = document.createElement('span');
+    priceSource.textContent = 'Observed in person';
+    price.append(priceValue, priceSource);
+    const note = document.createElement('p');
+    note.className = 'regular-price';
+    note.textContent = 'A real market find from your field notes.';
+    const source = document.createElement('span');
+    source.className = 'market-source-note';
+    source.textContent = 'Photo sighting';
+    card.append(brand, evidence, title, price, note, source);
     return card;
   }
 
-  async function loadMySightings({ reveal = false } = {}) {
-    if (!mySightingsSection || !sightingsRail) return false;
+  async function loadMarketSightings() {
+    if (!marketGrid) return false;
     const client = await getSupabaseClient();
     if (!client) return false;
     const { data: sessionData } = await client.auth.getSession();
-    if (!sessionData.session) {
-      mySightingsSection.hidden = !reveal;
-      mySightingsSection.setAttribute('aria-busy', 'false');
-      return false;
-    }
+    if (!sessionData.session) return false;
 
     const { data, error } = await client.from('sightings')
       .select('id,food_text,place_text,price_text,photo_path,status,observed_at')
       .order('observed_at', { ascending: false })
       .limit(12);
-    if (error) {
-      mySightingsSection.hidden = !reveal;
-      sightingsMessage.textContent = 'Your sightings could not be loaded right now.';
-      sightingsMessage.hidden = false;
-      mySightingsSection.setAttribute('aria-busy', 'false');
-      return false;
-    }
+    if (error) return false;
 
     const sightings = await Promise.all((data || []).map(async (sighting) => {
       if (!sighting.photo_path) return { ...sighting, photoUrl: null };
       const { data: signed } = await client.storage.from('sighting-photos').createSignedUrl(sighting.photo_path, 3600);
       return { ...sighting, photoUrl: signed?.signedUrl || null };
     }));
-    sightingsRail.replaceChildren(...sightings.map(renderSightingCard));
-    sightingsMessage.hidden = sightings.length > 0;
-    sightingsMessage.textContent = sightings.length ? '' : 'Your next market find will appear here.';
-    mySightingsSection.hidden = sightings.length === 0 && !reveal;
-    mySightingsSection.setAttribute('aria-busy', 'false');
+
+    const flyerCards = [...marketGrid.querySelectorAll('[data-market]:not([data-personal-sighting])')];
+    const sightingCards = sightings.map(renderMarketSightingCard);
+    const mixedCards = [];
+    let sightingIndex = 0;
+    flyerCards.forEach((card, index) => {
+      mixedCards.push(card);
+      if ((index + 1) % 2 === 0 && sightingIndex < sightingCards.length) {
+        mixedCards.push(sightingCards[sightingIndex]);
+        sightingIndex += 1;
+      }
+    });
+    mixedCards.push(...sightingCards.slice(sightingIndex));
+    marketGrid.replaceChildren(...mixedCards);
+    marketCards = [...marketGrid.querySelectorAll('[data-market]')];
+    const communityFilter = document.querySelector('[data-community-filter]');
+    if (communityFilter) communityFilter.hidden = sightings.length === 0;
+    applyMarketFilter(activeMarketFilter);
     return sightings.length > 0;
   }
 
@@ -589,7 +610,6 @@
       try {
         await updateOnlineSighting(currentSightingId, reviewedSighting);
         showSightingComplete(reviewedSighting);
-        loadMySightings({ reveal: true });
       } catch (error) {
         setFormStatus('Your edits could not be saved yet. Please try again.', 'error');
       } finally {
@@ -644,12 +664,8 @@
     }
   });
 
-  document.querySelector('[data-view-sightings]')?.addEventListener('click', async () => {
-    if (typeof spotDialog.close === 'function') spotDialog.close();
-    else spotDialog.removeAttribute('open');
-    resetSightingForm();
-    await loadMySightings({ reveal: true });
-    mySightingsSection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  document.querySelector('[data-view-market-finds]')?.addEventListener('click', () => {
+    window.location.href = 'markets.html';
   });
 
   document.querySelector('[data-add-another]')?.addEventListener('click', resetSightingForm);
@@ -664,5 +680,5 @@
     else locationDialog.setAttribute('open', '');
   });
 
-  loadMySightings();
+  loadMarketSightings();
 })();
