@@ -56,27 +56,37 @@
   <dialog class="spot-dialog" data-spot-dialog aria-labelledby="spot-title">
     <form method="dialog" class="dialog-card">
       <button class="dialog-close" value="cancel" aria-label="Close">×</button>
-      <p class="kicker">Add to the living season</p>
-      <h2 id="spot-title">What did you spot?</h2>
-      <p>Start with a photo. Flora can label what it sees and read a visible price.</p>
-      <label>Food or variety <span>(optional with a photo)</span><input name="food" autocomplete="off" placeholder="Flora can identify this"></label>
-      <div class="form-row"><label class="place-field">Place <span>(optional)</span><input name="place" autocomplete="off" placeholder="Start typing a market" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="place-suggestions"><span class="place-hint">Market suggestions appear as you type.</span><ul class="place-suggestions" id="place-suggestions" data-place-suggestions role="listbox" hidden></ul></label><label>Price <span>(optional)</span><input name="price" inputmode="decimal" placeholder="Flora can read the sign"></label></div>
-      <fieldset class="photo-fieldset">
-        <legend>Photo evidence <span>(optional)</span></legend>
-        <div class="photo-actions" data-photo-actions>
-          <label class="photo-action camera-action"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M9 4 7.5 6H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-3.5L15 4H9Zm3 13a4 4 0 1 1 0-8 4 4 0 0 1 0 8Z"/></svg><span>Take photo</span><input type="file" accept="image/*" capture="environment" data-photo-camera></label>
-          <label class="photo-action"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Zm1 13h14l-4.5-6-3.5 4.5-2.5-3L5 17Zm2-7a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/></svg><span>Photo library</span><input type="file" accept="image/*" data-photo-library></label>
+      <div data-sighting-editor>
+        <p class="kicker">Add to the living season</p>
+        <h2 id="spot-title">What did you spot?</h2>
+        <p>Start with a photo. Flora can label what it sees and read a visible price.</p>
+        <label>Food or variety <span>(optional with a photo)</span><input name="food" autocomplete="off" placeholder="Flora can identify this"></label>
+        <div class="form-row"><label class="place-field">Place <span>(optional)</span><input name="place" autocomplete="off" placeholder="Start typing a market" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="place-suggestions"><span class="place-hint">Market suggestions appear as you type.</span><ul class="place-suggestions" id="place-suggestions" data-place-suggestions role="listbox" hidden></ul></label><label>Price <span>(optional)</span><input name="price" inputmode="decimal" placeholder="Flora can read the sign"></label></div>
+        <fieldset class="photo-fieldset">
+          <legend>Photo evidence <span>(optional)</span></legend>
+          <div class="photo-actions" data-photo-actions>
+            <label class="photo-action camera-action"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M9 4 7.5 6H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-3.5L15 4H9Zm3 13a4 4 0 1 1 0-8 4 4 0 0 1 0 8Z"/></svg><span>Take photo</span><input type="file" accept="image/*" capture="environment" data-photo-camera></label>
+            <label class="photo-action"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Zm1 13h14l-4.5-6-3.5 4.5-2.5-3L5 17Zm2-7a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/></svg><span>Photo library</span><input type="file" accept="image/*" data-photo-library></label>
+          </div>
+          <figure class="photo-preview" data-photo-preview hidden><img alt="Selected sighting preview" data-photo-preview-image><figcaption><span data-photo-name></span><button type="button" data-remove-photo>Remove</button></figcaption></figure>
+          <p class="photo-note">Before upload, Flora makes a clean copy without embedded photo metadata.</p>
+        </fieldset>
+        <div class="location-consent">
+          <button class="outline-button location-consent-button" type="button" data-use-location><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 21s7-6.1 7-12A7 7 0 0 0 5 9c0 5.9 7 12 7 12Zm0-9.2A2.8 2.8 0 1 0 12 6a2.8 2.8 0 0 0 0 5.8Z"/></svg><span data-location-label>Add current location</span></button>
+          <p>Optional. Exact coordinates stay private; public views use a broad area or named market.</p>
         </div>
-        <figure class="photo-preview" data-photo-preview hidden><img alt="Selected sighting preview" data-photo-preview-image><figcaption><span data-photo-name></span><button type="button" data-remove-photo>Remove</button></figcaption></figure>
-        <p class="photo-note">Before upload, Flora makes a clean copy without embedded photo metadata.</p>
-      </fieldset>
-      <div class="location-consent">
-        <button class="outline-button location-consent-button" type="button" data-use-location><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 21s7-6.1 7-12A7 7 0 0 0 5 9c0 5.9 7 12 7 12Zm0-9.2A2.8 2.8 0 1 0 12 6a2.8 2.8 0 0 0 0 5.8Z"/></svg><span data-location-label>Add current location</span></button>
-        <p>Optional. Exact coordinates stay private; public views use a broad area or named market.</p>
+        <button class="solid-button" type="button" data-save-sighting>Identify &amp; review</button>
+        <p class="form-note" role="status" aria-live="polite" data-form-status></p>
+        <section class="analysis-result" data-analysis-result hidden aria-live="polite"><p class="kicker">Flora found</p><ul data-analysis-items></ul><p data-analysis-place></p></section>
       </div>
-      <button class="solid-button" value="submit" data-save-sighting>Share sighting</button>
-      <p class="form-note" role="status" aria-live="polite" data-form-status></p>
-      <section class="analysis-result" data-analysis-result hidden aria-live="polite"><p class="kicker">Flora found</p><ul data-analysis-items></ul><p data-analysis-place></p></section>
+      <section class="sighting-complete" data-sighting-complete hidden aria-live="polite">
+        <p class="kicker">Saved to your sightings</p>
+        <h2 data-complete-title>Sighting saved</h2>
+        <figure data-complete-photo hidden><img alt="Saved sighting" data-complete-image></figure>
+        <p class="complete-meta" data-complete-meta></p>
+        <button class="solid-button" type="button" data-finish-sighting>Done</button>
+        <button class="outline-button" type="button" data-add-another>Add another</button>
+      </section>
     </form>
   </dialog>
   <dialog class="location-dialog" data-location-dialog aria-labelledby="location-title"><form method="dialog" class="dialog-card compact"><button class="dialog-close" value="cancel" aria-label="Close">×</button><p class="kicker">Your seasonal region</p><h2 id="location-title">Bay Area, California</h2><p>The calendar is tuned for Northern California.</p><button class="solid-button" value="close">Sounds good</button></form></dialog>

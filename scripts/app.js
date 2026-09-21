@@ -51,6 +51,65 @@
     return new File([blob], 'flora-sighting.jpg', { type: 'image/jpeg', lastModified: Date.now() });
   }
 
+  async function readJpegGps(file) {
+    if (!file || !/jpe?g/i.test(file.type)) return null;
+    try {
+      const view = new DataView(await file.arrayBuffer());
+      if (view.getUint16(0) !== 0xffd8) return null;
+      let markerOffset = 2;
+      while (markerOffset + 4 < view.byteLength) {
+        if (view.getUint8(markerOffset) !== 0xff) break;
+        const marker = view.getUint8(markerOffset + 1);
+        const segmentLength = view.getUint16(markerOffset + 2);
+        if (marker === 0xe1 && segmentLength >= 14 && view.getUint32(markerOffset + 4) === 0x45786966) {
+          const tiff = markerOffset + 10;
+          const littleEndian = view.getUint16(tiff) === 0x4949;
+          const u16 = (offset) => view.getUint16(offset, littleEndian);
+          const u32 = (offset) => view.getUint32(offset, littleEndian);
+          if (u16(tiff + 2) !== 42) return null;
+
+          const findEntry = (ifdOffset, wantedTag) => {
+            const entryCount = u16(ifdOffset);
+            for (let index = 0; index < entryCount; index += 1) {
+              const entry = ifdOffset + 2 + (index * 12);
+              if (u16(entry) === wantedTag) return entry;
+            }
+            return null;
+          };
+          const primaryIfd = tiff + u32(tiff + 4);
+          const gpsPointerEntry = findEntry(primaryIfd, 0x8825);
+          if (!gpsPointerEntry) return null;
+          const gpsIfd = tiff + u32(gpsPointerEntry + 8);
+          const latitudeEntry = findEntry(gpsIfd, 0x0002);
+          const longitudeEntry = findEntry(gpsIfd, 0x0004);
+          if (!latitudeEntry || !longitudeEntry) return null;
+
+          const asciiValue = (entry) => String.fromCharCode(view.getUint8(entry + 8));
+          const coordinateValue = (entry) => {
+            const valuesOffset = tiff + u32(entry + 8);
+            const parts = [0, 1, 2].map((index) => {
+              const numerator = u32(valuesOffset + (index * 8));
+              const denominator = u32(valuesOffset + (index * 8) + 4);
+              return denominator ? numerator / denominator : 0;
+            });
+            return parts[0] + (parts[1] / 60) + (parts[2] / 3600);
+          };
+          const latitudeRef = findEntry(gpsIfd, 0x0001);
+          const longitudeRef = findEntry(gpsIfd, 0x0003);
+          const latitude = coordinateValue(latitudeEntry) * (latitudeRef && asciiValue(latitudeRef) === 'S' ? -1 : 1);
+          const longitude = coordinateValue(longitudeEntry) * (longitudeRef && asciiValue(longitudeRef) === 'W' ? -1 : 1);
+          if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
+          return { latitude, longitude, accuracy: null };
+        }
+        if (segmentLength < 2) break;
+        markerOffset += segmentLength + 2;
+      }
+    } catch (error) {
+      return null;
+    }
+    return null;
+  }
+
   function openSightingsDatabase() {
     return new Promise((resolve, reject) => {
       const request = indexedDB.open(SIGHTINGS_DB, 1);
@@ -157,8 +216,17 @@
   const analysisResult = document.querySelector('[data-analysis-result]');
   const analysisItems = document.querySelector('[data-analysis-items]');
   const analysisPlace = document.querySelector('[data-analysis-place]');
+  const sightingEditor = document.querySelector('[data-sighting-editor]');
+  const sightingComplete = document.querySelector('[data-sighting-complete]');
+  const completeTitle = document.querySelector('[data-complete-title]');
+  const completeMeta = document.querySelector('[data-complete-meta]');
+  const completePhoto = document.querySelector('[data-complete-photo]');
+  const completeImage = document.querySelector('[data-complete-image]');
   let selectedLocation = null;
+  let selectedLocationSource = null;
   let nearbyPlaces = [];
+  let currentSightingId = null;
+  let sightingPhase = 'capture';
 
   function setFormStatus(message, kind = '') {
     if (!formStatus) return;
@@ -227,6 +295,7 @@
         longitude: position.coords.longitude,
         accuracy: Math.round(position.coords.accuracy)
       };
+      selectedLocationSource = 'browser_gps';
       locationButton.classList.add('is-ready');
       locationLabel.textContent = `Location added · about ${selectedLocation.accuracy} m`;
       nearbyPlaces = await findNearbyPlaces(selectedLocation);
@@ -236,6 +305,7 @@
         : 'Location added privately. Start typing to choose the market.');
     }, () => {
       selectedLocation = null;
+      selectedLocationSource = null;
       locationLabel.textContent = 'Try current location again';
       setFormStatus('Location was not added. You can still share the sighting.', 'error');
     }, { enableHighAccuracy: true, timeout: 12000, maximumAge: 30000 });
@@ -258,6 +328,13 @@
 
   function clearPhoto() {
     selectedPhoto = null;
+    if (selectedLocationSource === 'photo_exif') {
+      selectedLocation = null;
+      selectedLocationSource = null;
+      nearbyPlaces = [];
+      locationButton?.classList.remove('is-ready');
+      if (locationLabel) locationLabel.textContent = 'Add current location';
+    }
     if (previewUrl) URL.revokeObjectURL(previewUrl);
     previewUrl = null;
     photoInputs.forEach((input) => { input.value = ''; });
@@ -267,13 +344,20 @@
   }
 
   photoInputs.forEach((input) => {
-    input.addEventListener('change', () => {
+    input.addEventListener('change', async () => {
       const file = input.files?.[0];
       if (!file) return;
       if (!file.type.startsWith('image/')) {
         setFormStatus('Choose a photo or image file.', 'error');
         input.value = '';
         return;
+      }
+      if (selectedLocationSource === 'photo_exif') {
+        selectedLocation = null;
+        selectedLocationSource = null;
+        nearbyPlaces = [];
+        locationButton?.classList.remove('is-ready');
+        if (locationLabel) locationLabel.textContent = 'Add current location';
       }
       selectedPhoto = file;
       if (previewUrl) URL.revokeObjectURL(previewUrl);
@@ -283,6 +367,18 @@
       photoPreview.hidden = false;
       photoActions.hidden = true;
       setFormStatus('Photo ready. Flora will remove its embedded metadata before upload.');
+      const photoLocation = await readJpegGps(file);
+      if (selectedPhoto !== file || !photoLocation) return;
+      selectedLocation = photoLocation;
+      selectedLocationSource = 'photo_exif';
+      locationButton.classList.add('is-ready');
+      locationLabel.textContent = 'Photo location added privately';
+      nearbyPlaces = await findNearbyPlaces(photoLocation);
+      if (selectedPhoto !== file) return;
+      if (!placeInput.value && nearbyPlaces.length) placeInput.value = nearbyPlaces[0];
+      setFormStatus(nearbyPlaces.length
+        ? `Photo location found. Suggested ${nearbyPlaces[0]}; the uploaded copy will not contain GPS metadata.`
+        : 'Photo location found privately. Start typing to choose the market; the uploaded copy will not contain GPS metadata.');
     });
   });
 
@@ -322,7 +418,7 @@
       observed_at: sighting.observedAt,
       photo_path: photoPath,
       status: photoPath ? 'pending_analysis' : 'pending_review',
-      location_source: sighting.location ? 'browser_gps' : null,
+      location_source: sighting.location ? sighting.locationSource : null,
       accuracy_meters: sighting.location?.accuracy ?? null,
       location: sighting.location
         ? `POINT(${sighting.location.longitude} ${sighting.location.latitude})`
@@ -339,12 +435,61 @@
         body: { sightingId: sighting.id }
       });
       return {
+        id: sighting.id,
         analysisQueued: !analysisError,
         analysisPending: Boolean(analysisError),
         analysis: analysisData?.analysis ?? null
       };
     }
-    return { analysisQueued: false, analysisPending: false, analysis: null };
+    return { id: sighting.id, analysisQueued: false, analysisPending: false, analysis: null };
+  }
+
+  async function updateOnlineSighting(id, sighting) {
+    const client = await getSupabaseClient();
+    if (!client) throw new Error('Online sync is not configured');
+    const { error } = await client.from('sightings').update({
+      food_text: sighting.food,
+      place_text: sighting.place || null,
+      price_text: sighting.price || null
+    }).eq('id', id);
+    if (error) throw error;
+  }
+
+  function showSightingComplete(sighting) {
+    completeTitle.textContent = sighting.food || 'Sighting saved';
+    completeMeta.textContent = [sighting.place, sighting.price].filter(Boolean).join(' · ') || 'Saved for your seasonal record.';
+    if (previewUrl) {
+      completeImage.src = previewUrl;
+      completePhoto.hidden = false;
+    } else {
+      completeImage.removeAttribute('src');
+      completePhoto.hidden = true;
+    }
+    sightingEditor.hidden = true;
+    sightingComplete.hidden = false;
+    sightingPhase = 'complete';
+  }
+
+  function resetSightingForm() {
+    const form = spotDialog?.querySelector('form');
+    form?.reset();
+    clearPhoto();
+    selectedLocation = null;
+    selectedLocationSource = null;
+    nearbyPlaces = [];
+    currentSightingId = null;
+    sightingPhase = 'capture';
+    locationButton?.classList.remove('is-ready');
+    if (locationLabel) locationLabel.textContent = 'Add current location';
+    if (analysisResult) analysisResult.hidden = true;
+    analysisItems?.replaceChildren();
+    if (analysisPlace) analysisPlace.textContent = '';
+    if (placeSuggestions) placeSuggestions.hidden = true;
+    if (sightingEditor) sightingEditor.hidden = false;
+    if (sightingComplete) sightingComplete.hidden = true;
+    if (completeImage) completeImage.removeAttribute('src');
+    if (saveButton) saveButton.textContent = 'Identify & review';
+    setFormStatus('');
   }
 
   const saveButton = document.querySelector('[data-save-sighting]');
@@ -357,15 +502,34 @@
       return;
     }
     const form = spotDialog.querySelector('form');
+    const reviewedSighting = {
+      food: food || 'Photo sighting',
+      place: form.elements.place.value.trim(),
+      price: form.elements.price.value.trim()
+    };
+
+    if (sightingPhase === 'review' && currentSightingId) {
+      form.classList.add('is-saving');
+      setFormStatus('Saving your sighting…');
+      try {
+        await updateOnlineSighting(currentSightingId, reviewedSighting);
+        showSightingComplete(reviewedSighting);
+      } catch (error) {
+        setFormStatus('Your edits could not be saved yet. Please try again.', 'error');
+      } finally {
+        form.classList.remove('is-saving');
+      }
+      return;
+    }
+
     form.classList.add('is-saving');
     setFormStatus('Preparing a private, metadata-free copy…');
     const sighting = {
       id: typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : `sighting-${Date.now()}`,
-      food: food || 'Photo sighting',
-      place: form.elements.place.value.trim(),
-      price: form.elements.price.value.trim(),
+      ...reviewedSighting,
       observedAt: new Date().toISOString(),
-      location: selectedLocation
+      location: selectedLocation,
+      locationSource: selectedLocationSource
     };
     try {
       const cleanPhoto = await makeMetadataFreePhoto(selectedPhoto);
@@ -382,11 +546,14 @@
         }
         renderAnalysis(result.analysis);
       }
+      currentSightingId = result.id;
+      sightingPhase = 'review';
+      saveButton.textContent = 'Save sighting';
       const outcome = result.analysisQueued
-        ? `${result.analysis?.items?.length || 1} item${result.analysis?.items?.length === 1 ? '' : 's'} labeled and shared.`
+        ? `${result.analysis?.items?.length || 1} item${result.analysis?.items?.length === 1 ? '' : 's'} found. Review the details, then save.`
         : result.analysisPending
-          ? `${sighting.food} shared. Photo saved; identification could not run yet.`
-          : `${sighting.food} shared.`;
+          ? 'Photo saved privately. Review what you entered, then save.'
+          : 'Review the details, then save.';
       setFormStatus(outcome, result.analysisPending ? 'error' : 'success');
     } catch (error) {
       try {
@@ -399,6 +566,18 @@
     } finally {
       form.classList.remove('is-saving');
     }
+  });
+
+  document.querySelector('[data-finish-sighting]')?.addEventListener('click', () => {
+    if (typeof spotDialog.close === 'function') spotDialog.close();
+    else spotDialog.removeAttribute('open');
+    resetSightingForm();
+  });
+
+  document.querySelector('[data-add-another]')?.addEventListener('click', resetSightingForm);
+
+  spotDialog?.addEventListener('close', () => {
+    if (sightingPhase === 'complete') resetSightingForm();
   });
 
   const locationDialog = document.querySelector('[data-location-dialog]');
