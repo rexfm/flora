@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#f4eddd">
   <meta name="description" content="Flora is a visual field guide to what is good to eat right now.">
   <title>Flora — Eat the season</title>
-  <link rel="stylesheet" href="styles.css?v=6">
+  <link rel="stylesheet" href="styles.css?v=7">
 </head>
 <body class="catalog-page">
   <a class="skip-link" href="#seasonal">Skip to seasonal produce</a>
@@ -61,7 +61,8 @@
         <h2 id="spot-title">What did you spot?</h2>
         <p>Start with a photo. Flora can label what it sees and read a visible price.</p>
         <label>Food or variety <span>(optional with a photo)</span><input name="food" autocomplete="off" placeholder="Flora can identify this"></label>
-        <div class="form-row"><label class="place-field">Place <span>(optional)</span><input name="place" autocomplete="off" placeholder="Start typing a market" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="place-suggestions"><span class="place-hint">Market suggestions appear as you type.</span><ul class="place-suggestions" id="place-suggestions" data-place-suggestions role="listbox" hidden></ul></label><label>Price <span>(optional)</span><input name="price" inputmode="decimal" placeholder="Flora can read the sign"></label></div>
+        <div class="form-row"><label class="place-field">Market or place <span>(optional)</span><input name="place" autocomplete="off" placeholder="Start typing a market" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="place-suggestions"><span class="place-hint">Market suggestions appear as you type.</span><ul class="place-suggestions" id="place-suggestions" data-place-suggestions role="listbox" hidden></ul></label><label>Farm or vendor <span>(optional)</span><input name="farm" autocomplete="organization" placeholder="Farm stand or grower"></label></div>
+        <label>Price <span>(optional)</span><input name="price" inputmode="decimal" placeholder="Flora can read the sign"></label>
         <fieldset class="photo-fieldset">
           <legend>Photo evidence <span>(optional)</span></legend>
           <div class="photo-actions" data-photo-actions>
@@ -91,7 +92,7 @@
   </dialog>
   <dialog class="location-dialog" data-location-dialog aria-labelledby="location-title"><form method="dialog" class="dialog-card compact"><button class="dialog-close" value="cancel" aria-label="Close">×</button><p class="kicker">Your seasonal region</p><h2 id="location-title">Bay Area, California</h2><p>The calendar is tuned for Northern California.</p><button class="solid-button" value="close">Sounds good</button></form></dialog>
   <dialog class="produce-dialog" data-produce-dialog aria-labelledby="produce-dialog-title"><form method="dialog" class="dialog-card compact"><button class="dialog-close" value="cancel" aria-label="Close">×</button><p class="kicker">September field note</p><h2 id="produce-dialog-title" data-produce-dialog-title>In season</h2><p data-produce-dialog-copy></p><button class="solid-button" value="close">Keep browsing</button></form></dialog>
-  <script src="scripts/config.js?v=6"></script>
-  <script src="scripts/app.js?v=6" defer></script>
+  <script src="scripts/config.js?v=7"></script>
+  <script src="scripts/app.js?v=7" defer></script>
 </body>
 </html>

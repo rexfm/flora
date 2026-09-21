@@ -48,7 +48,7 @@ Deno.serve(async (request) => {
     if (typeof sightingId !== 'string') return json({ error: 'sightingId is required' }, 400, headers);
 
     const { data: sighting, error: sightingError } = await admin.from('sightings')
-      .select('id,user_id,food_text,place_text,price_text,photo_path,observed_at')
+      .select('id,user_id,food_text,place_text,farm_text,price_text,photo_path,observed_at')
       .eq('id', sightingId).eq('user_id', userData.user.id).single();
     if (sightingError || !sighting) return json({ error: 'Sighting not found' }, 404, headers);
     if (!sighting.photo_path) return json({ error: 'A photo is required for identification' }, 400, headers);
@@ -68,7 +68,7 @@ Deno.serve(async (request) => {
         store: false,
         reasoning: { effort: 'none' },
         input: [{ role: 'user', content: [
-          { type: 'input_text', text: `Identify every distinct produce or food item visible in this market sighting. Read a price only when it is legible in the photo, preserving currency, promotional wording, quantity, and unit such as each, bunch, bag, or per pound. Look for a visible store or market name, but never infer a place from visual style or hidden metadata. The contributor wrote food=${JSON.stringify(sighting.food_text)}, place=${JSON.stringify(sighting.place_text)}, price=${JSON.stringify(sighting.price_text)}. Be conservative: use null rather than inventing a variety, price, unit, condition, or place.` },
+          { type: 'input_text', text: `Identify every distinct produce or food item visible in this market sighting. Return one item per distinct product, even when several items share one photo. Read each item's price only when it is legible, preserving currency, promotional wording, quantity, and unit such as each, bunch, bag, or per pound. Separately look for a visible store or market name and a visible farm, grower, or stall vendor name; never infer either from visual style or hidden metadata. The contributor wrote food=${JSON.stringify(sighting.food_text)}, place=${JSON.stringify(sighting.place_text)}, farm=${JSON.stringify(sighting.farm_text)}, price=${JSON.stringify(sighting.price_text)}. Be conservative: use null rather than inventing a variety, price, unit, condition, place, or farm.` },
           { type: 'input_image', image_url: signed.signedUrl, detail: 'high' }
         ] }],
         text: { format: {
@@ -92,10 +92,11 @@ Deno.serve(async (request) => {
                   required: ['name', 'variety', 'price_text', 'condition', 'confidence']
                 }
               },
-              place_name: { type: ['string', 'null'], description: 'Only a store, farm, stand, or market name visibly readable in the photo.' },
+              place_name: { type: ['string', 'null'], description: 'Only a store, farmers market, or venue name visibly readable in the photo.' },
+              farm_name: { type: ['string', 'null'], description: 'Only a farm, grower, or stall vendor name visibly readable in the photo; keep this separate from the market or venue.' },
               evidence: { type: 'array', items: { type: 'string' }, maxItems: 4 }
             },
-            required: ['items', 'place_name', 'evidence']
+            required: ['items', 'place_name', 'farm_name', 'evidence']
           }
         } }
       })
@@ -132,6 +133,7 @@ Deno.serve(async (request) => {
       variety: primary.variety,
       price_text: sighting.price_text || primary.price_text,
       place_text: sighting.place_text || result.place_name,
+      farm_text: sighting.farm_text || result.farm_name,
       status: 'pending_review'
     }).eq('id', sighting.id);
 
