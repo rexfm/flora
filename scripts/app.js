@@ -51,11 +51,20 @@
     return new File([blob], 'flora-sighting.jpg', { type: 'image/jpeg', lastModified: Date.now() });
   }
 
-  async function readJpegGps(file) {
-    if (!file || !/jpe?g/i.test(file.type)) return null;
+  function dateInputValue(date) {
+    if (!(date instanceof Date) || Number.isNaN(date.getTime())) return '';
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  async function readJpegMetadata(file) {
+    const fallbackDate = file?.lastModified ? dateInputValue(new Date(file.lastModified)) : '';
+    if (!file || !/jpe?g/i.test(file.type)) return { location: null, capturedDate: fallbackDate, dateSource: fallbackDate ? 'file' : null };
     try {
       const view = new DataView(await file.arrayBuffer());
-      if (view.getUint16(0) !== 0xffd8) return null;
+      if (view.getUint16(0) !== 0xffd8) return { location: null, capturedDate: fallbackDate, dateSource: fallbackDate ? 'file' : null };
       let markerOffset = 2;
       while (markerOffset + 4 < view.byteLength) {
         if (view.getUint8(markerOffset) !== 0xff) break;
@@ -66,7 +75,7 @@
           const littleEndian = view.getUint16(tiff) === 0x4949;
           const u16 = (offset) => view.getUint16(offset, littleEndian);
           const u32 = (offset) => view.getUint32(offset, littleEndian);
-          if (u16(tiff + 2) !== 42) return null;
+          if (u16(tiff + 2) !== 42) break;
 
           const findEntry = (ifdOffset, wantedTag) => {
             const entryCount = u16(ifdOffset);
@@ -77,37 +86,72 @@
             return null;
           };
           const primaryIfd = tiff + u32(tiff + 4);
-          const gpsPointerEntry = findEntry(primaryIfd, 0x8825);
-          if (!gpsPointerEntry) return null;
-          const gpsIfd = tiff + u32(gpsPointerEntry + 8);
-          const latitudeEntry = findEntry(gpsIfd, 0x0002);
-          const longitudeEntry = findEntry(gpsIfd, 0x0004);
-          if (!latitudeEntry || !longitudeEntry) return null;
-
-          const asciiValue = (entry) => String.fromCharCode(view.getUint8(entry + 8));
-          const coordinateValue = (entry) => {
-            const valuesOffset = tiff + u32(entry + 8);
-            const parts = [0, 1, 2].map((index) => {
-              const numerator = u32(valuesOffset + (index * 8));
-              const denominator = u32(valuesOffset + (index * 8) + 4);
-              return denominator ? numerator / denominator : 0;
-            });
-            return parts[0] + (parts[1] / 60) + (parts[2] / 3600);
+          const readAsciiEntry = (entry) => {
+            if (!entry || u16(entry + 2) !== 2) return '';
+            const count = u32(entry + 4);
+            const start = count <= 4 ? entry + 8 : tiff + u32(entry + 8);
+            let value = '';
+            for (let index = 0; index < count && start + index < view.byteLength; index += 1) {
+              const character = view.getUint8(start + index);
+              if (character === 0) break;
+              value += String.fromCharCode(character);
+            }
+            return value.trim();
           };
-          const latitudeRef = findEntry(gpsIfd, 0x0001);
-          const longitudeRef = findEntry(gpsIfd, 0x0003);
-          const latitude = coordinateValue(latitudeEntry) * (latitudeRef && asciiValue(latitudeRef) === 'S' ? -1 : 1);
-          const longitude = coordinateValue(longitudeEntry) * (longitudeRef && asciiValue(longitudeRef) === 'W' ? -1 : 1);
-          if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
-          return { latitude, longitude, accuracy: null };
+          const normalizeExifDate = (value) => {
+            const match = /^(\d{4}):(\d{2}):(\d{2})/.exec(value);
+            if (!match) return '';
+            const candidate = `${match[1]}-${match[2]}-${match[3]}`;
+            const parsed = new Date(`${candidate}T12:00:00`);
+            return Number.isNaN(parsed.getTime()) ? '' : candidate;
+          };
+          const exifPointerEntry = findEntry(primaryIfd, 0x8769);
+          const exifIfd = exifPointerEntry ? tiff + u32(exifPointerEntry + 8) : null;
+          const captureDateEntry = exifIfd
+            ? findEntry(exifIfd, 0x9003) || findEntry(exifIfd, 0x9004)
+            : null;
+          const capturedDate = normalizeExifDate(readAsciiEntry(captureDateEntry || findEntry(primaryIfd, 0x0132)));
+
+          let location = null;
+          const gpsPointerEntry = findEntry(primaryIfd, 0x8825);
+          if (gpsPointerEntry) {
+            const gpsIfd = tiff + u32(gpsPointerEntry + 8);
+            const latitudeEntry = findEntry(gpsIfd, 0x0002);
+            const longitudeEntry = findEntry(gpsIfd, 0x0004);
+            if (latitudeEntry && longitudeEntry) {
+              const asciiValue = (entry) => String.fromCharCode(view.getUint8(entry + 8));
+              const coordinateValue = (entry) => {
+                const valuesOffset = tiff + u32(entry + 8);
+                const parts = [0, 1, 2].map((index) => {
+                  const numerator = u32(valuesOffset + (index * 8));
+                  const denominator = u32(valuesOffset + (index * 8) + 4);
+                  return denominator ? numerator / denominator : 0;
+                });
+                return parts[0] + (parts[1] / 60) + (parts[2] / 3600);
+              };
+              const latitudeRef = findEntry(gpsIfd, 0x0001);
+              const longitudeRef = findEntry(gpsIfd, 0x0003);
+              const latitude = coordinateValue(latitudeEntry) * (latitudeRef && asciiValue(latitudeRef) === 'S' ? -1 : 1);
+              const longitude = coordinateValue(longitudeEntry) * (longitudeRef && asciiValue(longitudeRef) === 'W' ? -1 : 1);
+              if (Number.isFinite(latitude) && Number.isFinite(longitude)) {
+                location = { latitude, longitude, accuracy: null };
+              }
+            }
+          }
+
+          return {
+            location,
+            capturedDate: capturedDate || fallbackDate,
+            dateSource: capturedDate ? 'exif' : fallbackDate ? 'file' : null
+          };
         }
         if (segmentLength < 2) break;
         markerOffset += segmentLength + 2;
       }
     } catch (error) {
-      return null;
+      return { location: null, capturedDate: fallbackDate, dateSource: fallbackDate ? 'file' : null };
     }
-    return null;
+    return { location: null, capturedDate: fallbackDate, dateSource: fallbackDate ? 'file' : null };
   }
 
   function openSightingsDatabase() {
@@ -337,6 +381,7 @@
   const locationButton = document.querySelector('[data-use-location]');
   const locationLabel = document.querySelector('[data-location-label]');
   const placeInput = spotDialog?.querySelector('[name="place"]');
+  const observedDateInput = spotDialog?.querySelector('[name="observed-date"]');
   const placeSuggestions = document.querySelector('[data-place-suggestions]');
   const analysisResult = document.querySelector('[data-analysis-result]');
   const analysisItems = document.querySelector('[data-analysis-items]');
@@ -352,6 +397,24 @@
   let nearbyPlaces = [];
   let currentSightingId = null;
   let sightingPhase = 'capture';
+  let selectedDateSource = 'default';
+
+  function resetObservedDate() {
+    if (!observedDateInput) return;
+    const today = dateInputValue(new Date());
+    observedDateInput.max = today;
+    observedDateInput.value = today;
+    selectedDateSource = 'default';
+  }
+
+  function observedAtFromDate(value) {
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+    if (!match) return null;
+    return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]), 12).toISOString();
+  }
+
+  resetObservedDate();
+  observedDateInput?.addEventListener('change', () => { selectedDateSource = 'user'; });
 
   function setFormStatus(message, kind = '') {
     if (!formStatus) return;
@@ -457,6 +520,7 @@
 
   function clearPhoto() {
     selectedPhoto = null;
+    if (selectedDateSource === 'exif' || selectedDateSource === 'file') resetObservedDate();
     if (selectedLocationSource === 'photo_exif') {
       selectedLocation = null;
       selectedLocationSource = null;
@@ -488,6 +552,7 @@
         locationButton?.classList.remove('is-ready');
         if (locationLabel) locationLabel.textContent = 'Add current location';
       }
+      if (selectedDateSource === 'exif' || selectedDateSource === 'file') resetObservedDate();
       selectedPhoto = file;
       if (previewUrl) URL.revokeObjectURL(previewUrl);
       previewUrl = URL.createObjectURL(file);
@@ -496,18 +561,27 @@
       photoPreview.hidden = false;
       photoActions.hidden = true;
       setFormStatus('Photo ready. Flora will remove its embedded metadata before upload.');
-      const photoLocation = await readJpegGps(file);
-      if (selectedPhoto !== file || !photoLocation) return;
-      selectedLocation = photoLocation;
-      selectedLocationSource = 'photo_exif';
-      locationButton.classList.add('is-ready');
-      locationLabel.textContent = 'Photo location added privately';
-      nearbyPlaces = await findNearbyPlaces(photoLocation);
+      const metadata = await readJpegMetadata(file);
       if (selectedPhoto !== file) return;
-      if (!placeInput.value && nearbyPlaces.length) placeInput.value = nearbyPlaces[0];
-      setFormStatus(nearbyPlaces.length
-        ? `Photo location found. Suggested ${nearbyPlaces[0]}; the uploaded copy will not contain GPS metadata.`
-        : 'Photo location found privately. Start typing to choose the market; the uploaded copy will not contain GPS metadata.');
+      const metadataNotes = [];
+      if (metadata.capturedDate && observedDateInput) {
+        observedDateInput.value = metadata.capturedDate;
+        selectedDateSource = metadata.dateSource;
+        metadataNotes.push(metadata.dateSource === 'exif' ? 'Original photo date added' : 'Photo file date added—please check it');
+      }
+      if (metadata.location) {
+        selectedLocation = metadata.location;
+        selectedLocationSource = 'photo_exif';
+        locationButton.classList.add('is-ready');
+        locationLabel.textContent = 'Photo location added privately';
+        nearbyPlaces = await findNearbyPlaces(metadata.location);
+        if (selectedPhoto !== file) return;
+        if (!placeInput.value && nearbyPlaces.length) placeInput.value = nearbyPlaces[0];
+        metadataNotes.push(nearbyPlaces.length ? `Suggested ${nearbyPlaces[0]}` : 'Photo location added privately');
+      }
+      setFormStatus(metadataNotes.length
+        ? `${metadataNotes.join('. ')}. The uploaded copy will not contain photo metadata.`
+        : 'Photo ready. Check the date and place; the uploaded copy will not contain photo metadata.');
     });
   });
 
@@ -581,14 +655,16 @@
       food_text: sighting.food,
       place_text: sighting.place || null,
       farm_text: sighting.farm || null,
-      price_text: sighting.price || null
+      price_text: sighting.price || null,
+      observed_at: sighting.observedAt
     }).eq('id', id);
     if (error) throw error;
   }
 
   function showSightingComplete(sighting) {
     completeTitle.textContent = sighting.food || 'Sighting saved';
-    completeMeta.textContent = [sighting.place, sighting.farm, sighting.price].filter(Boolean).join(' · ') || 'Saved for your seasonal record.';
+    const spottedDate = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' }).format(new Date(sighting.observedAt));
+    completeMeta.textContent = [spottedDate, sighting.place, sighting.farm, sighting.price].filter(Boolean).join(' · ');
     if (previewUrl) {
       completeImage.src = previewUrl;
       completePhoto.hidden = false;
@@ -620,6 +696,7 @@
     if (sightingComplete) sightingComplete.hidden = true;
     if (completeImage) completeImage.removeAttribute('src');
     if (saveButton) saveButton.textContent = 'Identify & review';
+    resetObservedDate();
     setFormStatus('');
   }
 
@@ -633,11 +710,17 @@
       return;
     }
     const form = spotDialog.querySelector('form');
+    const observedAt = observedAtFromDate(form.elements['observed-date'].value);
+    if (!observedAt) {
+      setFormStatus('Choose the date when you saw these items.', 'error');
+      return;
+    }
     const reviewedSighting = {
       food: food || 'Photo sighting',
       place: form.elements.place.value.trim(),
       farm: form.elements.farm.value.trim(),
-      price: form.elements.price.value.trim()
+      price: form.elements.price.value.trim(),
+      observedAt
     };
 
     if (sightingPhase === 'review' && currentSightingId) {
@@ -659,7 +742,6 @@
     const sighting = {
       id: typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : `sighting-${Date.now()}`,
       ...reviewedSighting,
-      observedAt: new Date().toISOString(),
       location: selectedLocation,
       locationSource: selectedLocationSource
     };
