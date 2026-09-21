@@ -29,6 +29,19 @@ async function submitRequestedSighting() {
   return 'Your sighting was submitted for admin review.';
 }
 
+async function claimPendingSightings() {
+  const url = new URL(window.location.href);
+  const token = url.searchParams.get('claim');
+  if (!token) return null;
+  const { data: movedCount, error } = await client.rpc('claim_anonymous_sightings', { p_token: token });
+  url.searchParams.delete('claim');
+  history.replaceState({}, '', `${url.pathname.split('/').pop()}${url.search}`);
+  if (error) return 'Your account is signed in, but the sightings could not be transferred. Please request another link.';
+  return movedCount === 1
+    ? '1 sighting was added to your account.'
+    : `${movedCount} sightings were added to your account.`;
+}
+
 async function loadSubmissions() {
   const { data, error } = await client.from('sightings')
     .select('id,food_text,place_text,farm_text,price_text,status,observed_at,rejection_reason')
@@ -83,11 +96,13 @@ async function render() {
   document.querySelector('[data-account-email]').textContent = user.email || 'Flora member';
   const { data: profile } = await client.from('profiles').select('role').eq('id', user.id).maybeSingle();
   if (profile?.role === 'admin') show(document.querySelector('[data-admin-link]'));
+  const claimMessage = await claimPendingSightings();
   const submissionMessage = await submitRequestedSighting();
-  if (submissionMessage) {
+  const accountMessage = [claimMessage, submissionMessage].filter(Boolean).join(' ');
+  if (accountMessage) {
     const notice = document.createElement('p');
     notice.className = 'account-notice';
-    notice.textContent = submissionMessage;
+    notice.textContent = accountMessage;
     dashboard.prepend(notice);
   }
   await loadSubmissions();
@@ -102,10 +117,21 @@ document.querySelector('[data-account-form]')?.addEventListener('submit', async 
   if (submitId) redirect.searchParams.set('submit', submitId);
   status.textContent = 'Sending your secure link…';
   const { data: sessionData } = await client.auth.getSession();
-  const result = sessionData.session?.user?.is_anonymous
-    ? await client.auth.updateUser({ email }, { emailRedirectTo: redirect.href })
-    : await client.auth.signInWithOtp({ email, options: { emailRedirectTo: redirect.href } });
-  status.textContent = result.error ? result.error.message : 'Check your email, then open the Flora link on this device.';
+  const anonymousUser = sessionData.session?.user?.is_anonymous;
+  if (anonymousUser) {
+    const { data: claimToken, error: claimError } = await client.rpc('prepare_sighting_account_claim');
+    if (claimError || !claimToken) {
+      status.textContent = 'Flora could not prepare your sightings for transfer. Please try again.';
+      return;
+    }
+    redirect.searchParams.set('claim', claimToken);
+  }
+  const result = await client.auth.signInWithOtp({ email, options: { emailRedirectTo: redirect.href } });
+  status.textContent = result.error
+    ? result.error.message
+    : anonymousUser
+      ? 'Check your email and open the Flora link on this device. Your sightings will move into that account.'
+      : 'Check your email, then open the Flora link on this device.';
 });
 
 document.querySelector('[data-sign-out]')?.addEventListener('click', async () => {

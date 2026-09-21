@@ -47,6 +47,8 @@ where p.id = u.id and lower(u.email) = lower('you@example.com');
 
 Member-facing code cannot change roles or approve records. Row Level Security permits admins to read review photos and pending submissions, and the `review_sighting` function is the only app action that publishes or rejects a submission.
 
+When an anonymous contributor enters an email that already belongs to a Flora account, the app creates a one-hour, single-use transfer claim and includes it in the secure email redirect. After the link signs that account in, a database function moves the anonymous session's sightings to the verified account. Merely knowing an email address is not enough to claim sightings.
+
 The browser uses the public values in `scripts/config.js`. That publishable key is intentionally safe to ship in a website because access is enforced by Row Level Security. Never put a Supabase secret key or an OpenAI API key in that file.
 
 If online sync is temporarily unavailable, the cleaned photo and sighting are retained in IndexedDB on that device.
