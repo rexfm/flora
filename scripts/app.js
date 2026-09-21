@@ -166,6 +166,8 @@
   });
 
   const marketGrid = document.querySelector('[data-market-grid]');
+  const marketLoadStatus = document.querySelector('[data-market-load-status]');
+  const marketLoadCopy = document.querySelector('[data-market-load-copy]');
   let marketCards = [...document.querySelectorAll('[data-market]')];
   const marketChips = [...document.querySelectorAll('[data-market-filter]')];
   let activeMarketFilter = 'all';
@@ -240,6 +242,7 @@
 
   async function loadMarketSightings() {
     if (!marketGrid) return false;
+    if (marketLoadStatus) marketLoadStatus.hidden = true;
     const client = await getSupabaseClient();
     if (!client) return false;
     const { data: sessionData } = await client.auth.getSession();
@@ -249,7 +252,11 @@
       .select('id,food_text,place_text,price_text,photo_path,status,observed_at')
       .order('observed_at', { ascending: false })
       .limit(12);
-    if (error) return false;
+    if (error) {
+      if (marketLoadCopy) marketLoadCopy.textContent = 'Your saved sightings could not be loaded.';
+      if (marketLoadStatus) marketLoadStatus.hidden = false;
+      return false;
+    }
 
     const sightings = await Promise.all((data || []).map(async (sighting) => {
       if (!sighting.photo_path) return { ...sighting, photoUrl: null };
@@ -263,7 +270,7 @@
     let sightingIndex = 0;
     flyerCards.forEach((card, index) => {
       mixedCards.push(card);
-      if ((index + 1) % 2 === 0 && sightingIndex < sightingCards.length) {
+      if (index % 2 === 0 && sightingIndex < sightingCards.length) {
         mixedCards.push(sightingCards[sightingIndex]);
         sightingIndex += 1;
       }
@@ -273,6 +280,10 @@
     marketCards = [...marketGrid.querySelectorAll('[data-market]')];
     const communityFilter = document.querySelector('[data-community-filter]');
     if (communityFilter) communityFilter.hidden = sightings.length === 0;
+    if (sightings.length === 0 && marketLoadCopy && marketLoadStatus) {
+      marketLoadCopy.textContent = 'No saved sightings were found in this browser session.';
+      marketLoadStatus.hidden = false;
+    }
     applyMarketFilter(activeMarketFilter);
     return sightings.length > 0;
   }
@@ -289,13 +300,18 @@
   });
 
   const spotDialog = document.querySelector('[data-spot-dialog]');
+  function openSpotDialog() {
+    if (!spotDialog) return;
+    if (typeof spotDialog.showModal === 'function') spotDialog.showModal();
+    else spotDialog.setAttribute('open', '');
+  }
   document.querySelectorAll('[data-spot-button]').forEach((button) => {
-    button.addEventListener('click', () => {
-      if (!spotDialog) return;
-      if (typeof spotDialog.showModal === 'function') spotDialog.showModal();
-      else spotDialog.setAttribute('open', '');
-    });
+    button.addEventListener('click', openSpotDialog);
   });
+  if (window.location.hash === '#spot') {
+    openSpotDialog();
+    history.replaceState(null, '', `${window.location.pathname}${window.location.search}`);
+  }
 
   let selectedPhoto = null;
   let previewUrl = null;
@@ -680,5 +696,6 @@
     else locationDialog.setAttribute('open', '');
   });
 
+  document.querySelector('[data-retry-sightings]')?.addEventListener('click', loadMarketSightings);
   loadMarketSightings();
 })();
