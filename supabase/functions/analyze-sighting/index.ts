@@ -1,0 +1,131 @@
+import { createClient } from 'npm:@supabase/supabase-js@2';
+
+const allowedOrigins = new Set(['https://rexfm.github.io', 'http://localhost:4173', 'http://127.0.0.1:4173']);
+
+function corsHeaders(origin: string | null) {
+  return {
+    'Access-Control-Allow-Origin': origin && allowedOrigins.has(origin) ? origin : 'https://rexfm.github.io',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Vary': 'Origin'
+  };
+}
+
+function json(body: unknown, status: number, headers: Record<string, string>) {
+  return new Response(JSON.stringify(body), { status, headers: { ...headers, 'Content-Type': 'application/json' } });
+}
+
+function readOutputText(response: Record<string, unknown>): string | null {
+  const output = Array.isArray(response.output) ? response.output : [];
+  for (const item of output as Array<Record<string, unknown>>) {
+    if (item.type !== 'message' || !Array.isArray(item.content)) continue;
+    for (const content of item.content as Array<Record<string, unknown>>) {
+      if (content.type === 'output_text' && typeof content.text === 'string') return content.text;
+    }
+  }
+  return null;
+}
+
+Deno.serve(async (request) => {
+  const headers = corsHeaders(request.headers.get('origin'));
+  if (request.method === 'OPTIONS') return new Response('ok', { headers });
+  if (request.method !== 'POST') return json({ error: 'Method not allowed' }, 405, headers);
+
+  try {
+    const authHeader = request.headers.get('Authorization');
+    if (!authHeader) return json({ error: 'Authentication required' }, 401, headers);
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const publicKey = Deno.env.get('SB_PUBLISHABLE_KEY') ?? Deno.env.get('SUPABASE_ANON_KEY')!;
+    const secretKey = Deno.env.get('SB_SECRET_KEY') ?? Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const userClient = createClient(supabaseUrl, publicKey, { global: { headers: { Authorization: authHeader } } });
+    const admin = createClient(supabaseUrl, secretKey, { auth: { persistSession: false } });
+
+    const { data: userData, error: userError } = await userClient.auth.getUser();
+    if (userError || !userData.user) return json({ error: 'Invalid session' }, 401, headers);
+
+    const { sightingId } = await request.json();
+    if (typeof sightingId !== 'string') return json({ error: 'sightingId is required' }, 400, headers);
+
+    const { data: sighting, error: sightingError } = await admin.from('sightings')
+      .select('id,user_id,food_text,place_text,price_text,photo_path,observed_at')
+      .eq('id', sightingId).eq('user_id', userData.user.id).single();
+    if (sightingError || !sighting) return json({ error: 'Sighting not found' }, 404, headers);
+    if (!sighting.photo_path) return json({ error: 'A photo is required for identification' }, 400, headers);
+
+    const { data: signed, error: signedError } = await admin.storage.from('sighting-photos')
+      .createSignedUrl(sighting.photo_path, 300);
+    if (signedError || !signed?.signedUrl) throw signedError ?? new Error('Could not create photo URL');
+
+    const openaiKey = Deno.env.get('OPENAI_API_KEY');
+    if (!openaiKey) return json({ error: 'Photo saved; analysis is not configured yet' }, 503, headers);
+
+    const aiResponse = await fetch('https://api.openai.com/v1/responses', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${openaiKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'gpt-5.6-luna',
+        store: false,
+        reasoning: { effort: 'none' },
+        input: [{ role: 'user', content: [
+          { type: 'input_text', text: `Identify the produce in this market sighting. The contributor wrote food=${JSON.stringify(sighting.food_text)}, place=${JSON.stringify(sighting.place_text)}, price=${JSON.stringify(sighting.price_text)}. Be conservative: report uncertainty rather than inventing a variety. Never infer an exact location from the image.` },
+          { type: 'input_image', image_url: signed.signedUrl, detail: 'low' }
+        ] }],
+        text: { format: {
+          type: 'json_schema',
+          name: 'produce_sighting',
+          strict: true,
+          schema: {
+            type: 'object', additionalProperties: false,
+            properties: {
+              produce_name: { type: 'string' },
+              variety: { type: ['string', 'null'] },
+              condition: { type: ['string', 'null'], description: 'A short visible freshness or ripeness note.' },
+              confidence: { type: 'number', minimum: 0, maximum: 1 },
+              evidence: { type: 'array', items: { type: 'string' }, maxItems: 4 }
+            },
+            required: ['produce_name', 'variety', 'condition', 'confidence', 'evidence']
+          }
+        } }
+      })
+    });
+    if (!aiResponse.ok) throw new Error(`OpenAI request failed (${aiResponse.status})`);
+    const ai = await aiResponse.json();
+    const outputText = readOutputText(ai);
+    if (!outputText) throw new Error('The model returned no structured result');
+    const result = JSON.parse(outputText);
+
+    const { error: analysisError } = await admin.from('sighting_analysis').upsert({
+      sighting_id: sighting.id,
+      produce_name: result.produce_name,
+      variety: result.variety,
+      condition: result.condition,
+      confidence: result.confidence,
+      evidence: { visible_clues: result.evidence },
+      model: 'gpt-5.6-luna'
+    }, { onConflict: 'sighting_id' });
+    if (analysisError) throw analysisError;
+
+    await admin.from('sightings').update({
+      produce_name: result.produce_name,
+      variety: result.variety,
+      status: result.confidence >= 0.72 ? 'confirmed' : 'pending_review'
+    }).eq('id', sighting.id);
+
+    if (result.confidence >= 0.72) {
+      await admin.from('aura_ledger').upsert({
+        user_id: sighting.user_id,
+        event_type: 'verified_sighting',
+        points: 10,
+        source_type: 'sighting',
+        source_id: sighting.id
+      }, { onConflict: 'user_id,event_type,source_type,source_id' });
+    }
+
+    return json({ analysis: result }, 200, headers);
+  } catch (error) {
+    console.error(error);
+    return json({ error: 'Analysis failed; the sighting remains saved for retry.' }, 500, headers);
+  }
+});
+
