@@ -181,6 +181,81 @@
     });
   });
 
+  const mySightingsSection = document.querySelector('[data-my-sightings]');
+  const sightingsRail = document.querySelector('[data-sightings-rail]');
+  const sightingsMessage = document.querySelector('[data-sightings-message]');
+
+  function renderSightingCard(sighting) {
+    const card = document.createElement('article');
+    card.className = 'personal-sighting';
+    const visual = document.createElement('div');
+    visual.className = 'personal-sighting-photo';
+    if (sighting.photoUrl) {
+      const image = document.createElement('img');
+      image.src = sighting.photoUrl;
+      image.alt = `Photo of ${sighting.food_text}`;
+      image.loading = 'lazy';
+      visual.append(image);
+    } else {
+      const fallback = document.createElement('span');
+      fallback.setAttribute('aria-hidden', 'true');
+      fallback.textContent = '✳';
+      visual.append(fallback);
+    }
+
+    const copy = document.createElement('div');
+    copy.className = 'personal-sighting-copy';
+    const state = document.createElement('span');
+    state.className = 'personal-sighting-state';
+    state.textContent = sighting.status === 'pending_analysis' ? 'Identifying' : sighting.status === 'confirmed' ? 'Shared' : 'Saved';
+    const title = document.createElement('h3');
+    title.textContent = sighting.food_text;
+    const details = document.createElement('p');
+    details.textContent = [sighting.place_text, sighting.price_text].filter(Boolean).join(' · ') || 'Details saved';
+    const date = document.createElement('time');
+    date.dateTime = sighting.observed_at;
+    date.textContent = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(new Date(sighting.observed_at));
+    copy.append(state, title, details, date);
+    card.append(visual, copy);
+    return card;
+  }
+
+  async function loadMySightings({ reveal = false } = {}) {
+    if (!mySightingsSection || !sightingsRail) return false;
+    const client = await getSupabaseClient();
+    if (!client) return false;
+    const { data: sessionData } = await client.auth.getSession();
+    if (!sessionData.session) {
+      mySightingsSection.hidden = !reveal;
+      mySightingsSection.setAttribute('aria-busy', 'false');
+      return false;
+    }
+
+    const { data, error } = await client.from('sightings')
+      .select('id,food_text,place_text,price_text,photo_path,status,observed_at')
+      .order('observed_at', { ascending: false })
+      .limit(12);
+    if (error) {
+      mySightingsSection.hidden = !reveal;
+      sightingsMessage.textContent = 'Your sightings could not be loaded right now.';
+      sightingsMessage.hidden = false;
+      mySightingsSection.setAttribute('aria-busy', 'false');
+      return false;
+    }
+
+    const sightings = await Promise.all((data || []).map(async (sighting) => {
+      if (!sighting.photo_path) return { ...sighting, photoUrl: null };
+      const { data: signed } = await client.storage.from('sighting-photos').createSignedUrl(sighting.photo_path, 3600);
+      return { ...sighting, photoUrl: signed?.signedUrl || null };
+    }));
+    sightingsRail.replaceChildren(...sightings.map(renderSightingCard));
+    sightingsMessage.hidden = sightings.length > 0;
+    sightingsMessage.textContent = sightings.length ? '' : 'Your next market find will appear here.';
+    mySightingsSection.hidden = sightings.length === 0 && !reveal;
+    mySightingsSection.setAttribute('aria-busy', 'false');
+    return sightings.length > 0;
+  }
+
   const produceDialog = document.querySelector('[data-produce-dialog]');
   document.querySelectorAll('[data-produce-detail]').forEach((link) => {
     link.addEventListener('click', (event) => {
@@ -514,6 +589,7 @@
       try {
         await updateOnlineSighting(currentSightingId, reviewedSighting);
         showSightingComplete(reviewedSighting);
+        loadMySightings({ reveal: true });
       } catch (error) {
         setFormStatus('Your edits could not be saved yet. Please try again.', 'error');
       } finally {
@@ -568,10 +644,12 @@
     }
   });
 
-  document.querySelector('[data-finish-sighting]')?.addEventListener('click', () => {
+  document.querySelector('[data-view-sightings]')?.addEventListener('click', async () => {
     if (typeof spotDialog.close === 'function') spotDialog.close();
     else spotDialog.removeAttribute('open');
     resetSightingForm();
+    await loadMySightings({ reveal: true });
+    mySightingsSection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
 
   document.querySelector('[data-add-another]')?.addEventListener('click', resetSightingForm);
@@ -585,4 +663,6 @@
     if (typeof locationDialog.showModal === 'function') locationDialog.showModal();
     else locationDialog.setAttribute('open', '');
   });
+
+  loadMySightings();
 })();

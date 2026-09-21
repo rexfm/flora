@@ -18,6 +18,12 @@
   <main id="top">
     <section class="catalog-hero shell" aria-labelledby="page-title"><p class="eyebrow"><time datetime="2026-09-20">September 20</time> · Bay Area</p><h1 id="page-title">Eat the<br><em>season.</em></h1><p>Pick something that looks good.</p></section>
 
+    <section class="my-sightings shell" data-my-sightings hidden aria-labelledby="my-sightings-title" aria-busy="true">
+      <div class="my-sightings-heading"><div><p class="kicker">Your field notes</p><h2 id="my-sightings-title">Recently spotted</h2></div><p>Visible only to you while each find is reviewed.</p></div>
+      <div class="sightings-rail" data-sightings-rail></div>
+      <p class="sightings-message" data-sightings-message hidden></p>
+    </section>
+
     <section class="seasonal-section catalog-season" id="seasonal" aria-labelledby="seasonal-title">
       <div class="section-heading shell"><div><p class="kicker">Right now</p><h2 id="seasonal-title">September’s good stuff</h2></div></div>
       <div class="filter-bar shell" aria-label="Filter seasonal produce">
@@ -84,7 +90,7 @@
         <h2 data-complete-title>Sighting saved</h2>
         <figure data-complete-photo hidden><img alt="Saved sighting" data-complete-image></figure>
         <p class="complete-meta" data-complete-meta></p>
-        <button class="solid-button" type="button" data-finish-sighting>Done</button>
+        <button class="solid-button" type="button" data-view-sightings>View my sightings</button>
         <button class="outline-button" type="button" data-add-another>Add another</button>
       </section>
     </form>
