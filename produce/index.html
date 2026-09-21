@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#d8d3a5">
+  <meta name="description" content="Find seasonal produce around the Bay Area with Flora.">
+  <title>Produce guide — Flora</title>
+  <link rel="stylesheet" href="../styles.css?v=9">
+</head>
+<body class="detail-page dynamic-produce-page">
+  <header class="site-header shell"><a class="wordmark" href="../index.html">flora<span aria-hidden="true">✳</span></a><a class="back-link" href="../index.html#seasonal">← All produce</a></header>
+  <main>
+    <section class="produce-hero dynamic-produce-hero">
+      <div class="produce-hero-art"><img data-guide-image src="../assets/grapes.svg" alt="Seasonal produce" width="800" height="640"></div>
+      <div class="produce-hero-copy"><span class="season-tag peak" data-guide-status>In season</span><p class="eyebrow">Bay Area · September</p><h1 data-guide-title>Seasonal produce</h1><p class="flavor-line" data-guide-intro>See where it has been spotted nearby.</p><div class="quick-facts"><span><b>Season</b><span data-guide-season>Now</span></span><span><b>Origin</b><span data-guide-origin>California</span></span><span><b>Evidence</b><span data-guide-evidence>Loading finds…</span></span></div></div>
+    </section>
+
+    <nav class="detail-tabs shell" aria-label="Produce guide"><a href="#find">Find</a><a href="#eat">Eat</a><a href="#grow">Grow</a></nav>
+
+    <section class="detail-section find-detail shell" id="find" aria-labelledby="find-title">
+      <div class="detail-heading"><span>01</span><div><p class="kicker">Find</p><h2 id="find-title">Where to find it.</h2></div></div>
+      <p class="detail-lead find-tip" data-guide-find-tip>Look for recent, dated evidence before making a special trip.</p>
+      <div class="produce-find-grid" data-guide-finds aria-live="polite"><article class="find-result empty"><p class="evidence indexed">Loading current finds</p><h3>Checking Flora’s market notes…</h3></article></div>
+    </section>
+
+    <section class="detail-section eat-detail" id="eat" aria-labelledby="eat-title"><div class="shell"><div class="detail-heading"><span>02</span><div><p class="kicker">Eat</p><h2 id="eat-title">Make the most of it.</h2></div></div><div class="guide-notes" data-guide-eat></div></div></section>
+    <section class="detail-section grow-detail shell" id="grow" aria-labelledby="grow-title"><div class="detail-heading"><span>03</span><div><p class="kicker">Grow</p><h2 id="grow-title">Know the plant.</h2></div></div><div class="guide-notes grow-notes" data-guide-grow></div></section>
+
+    <aside class="next-produce shell"><p class="kicker">Keep browsing</p><a href="../index.html#seasonal"><span>Back to September’s good stuff</span><b aria-hidden="true">→</b></a></aside>
+  </main>
+  <footer class="site-footer shell"><a class="wordmark" href="../index.html">flora<span aria-hidden="true">✳</span></a><p>Notice the season. Eat what looks good.</p></footer>
+  <nav class="mobile-nav" aria-label="Primary"><a href="../index.html"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 10.5 12 4l8 6.5V20h-6v-6h-4v6H4v-9.5Z"/></svg><span>Season</span></a><a class="is-active" href="#find"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M11 19a8 8 0 1 1 5.3-2l4.4 4.3-1.4 1.4-4.3-4.4A8 8 0 0 1 11 19Zm0-2a6 6 0 1 0 0-12 6 6 0 0 0 0 12Z"/></svg><span>Find</span></a><a class="spot-nav" href="../index.html#spot"><span class="spot-circle">＋</span><span>Spot</span></a><a href="#eat"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M7 3h2v7a3 3 0 0 1-2 2.8V21H5v-8.2A3 3 0 0 1 3 10V3h2v6h2V3Zm8 0c3.3 0 6 2.7 6 6v4h-4v8h-2V3Z"/></svg><span>Eat</span></a><a href="#grow"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 21h-2v-8.1C6.3 12.4 4 10 4 6V4h2c3.2 0 5.3 1.4 6.4 3.7C13.7 5.4 16 4 20 4v2c0 4.6-2.9 7-8 7v8Z"/></svg><span>Grow</span></a></nav>
+  <script src="../scripts/config.js?v=9"></script>
+  <script src="../scripts/produce.js?v=9" defer></script>
+</body>
+</html>
