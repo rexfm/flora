@@ -89,7 +89,12 @@ Deno.serve(async (request) => {
         } }
       })
     });
-    if (!aiResponse.ok) throw new Error(`OpenAI request failed (${aiResponse.status})`);
+    if (!aiResponse.ok) {
+      const failure = await aiResponse.json().catch(() => null);
+      const errorCode = failure?.error?.code ?? failure?.error?.type ?? 'unknown';
+      console.error(`OpenAI request failed (${aiResponse.status}, ${errorCode})`);
+      throw new Error(`OpenAI request failed (${aiResponse.status})`);
+    }
     const ai = await aiResponse.json();
     const outputText = readOutputText(ai);
     if (!outputText) throw new Error('The model returned no structured result');
@@ -128,4 +133,3 @@ Deno.serve(async (request) => {
     return json({ error: 'Analysis failed; the sighting remains saved for retry.' }, 500, headers);
   }
 });
-

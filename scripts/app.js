@@ -253,9 +253,9 @@
       const { error: analysisError } = await client.functions.invoke('analyze-sighting', {
         body: { sightingId: sighting.id }
       });
-      return { analysisQueued: !analysisError };
+      return { analysisQueued: !analysisError, analysisPending: Boolean(analysisError) };
     }
-    return { analysisQueued: false };
+    return { analysisQueued: false, analysisPending: false };
   }
 
   const saveButton = document.querySelector('[data-save-sighting]');
@@ -283,7 +283,12 @@
       const cleanPhoto = await makeMetadataFreePhoto(selectedPhoto);
       setFormStatus('Sharing sighting…');
       const result = await saveOnlineSighting(sighting, cleanPhoto);
-      setFormStatus(`${food} shared${result.analysisQueued ? ' and sent for identification' : ''}.`, 'success');
+      const outcome = result.analysisQueued
+        ? `${food} shared and identified.`
+        : result.analysisPending
+          ? `${food} shared. Photo saved; identification could not run yet.`
+          : `${food} shared.`;
+      setFormStatus(outcome, result.analysisPending ? 'error' : 'success');
     } catch (error) {
       try {
         const cleanPhoto = await makeMetadataFreePhoto(selectedPhoto);
